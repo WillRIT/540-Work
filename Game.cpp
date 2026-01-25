@@ -274,8 +274,24 @@ void Game::Update(float deltaTime, float totalTime)
 	// Determine new input capture
 	Input::SetKeyboardCapture(io.WantCaptureKeyboard);
 	Input::SetMouseCapture(io.WantCaptureMouse);
-	// Show the demo window
-	ImGui::ShowDemoWindow();
+	// Make a New Window
+
+	if (isVisible)
+	{
+		ImGui::Begin("My AWESOME CUSTOM Window");
+
+		ImGui::Text("Framerate: %f fps", ImGui::GetIO().Framerate);
+		ImGui::Text("Window is %d pixels wide and %d pixels high", Window::Width(), Window::Height());
+		ImGui::ColorEdit4("RGBA color editor", &colors[0]);
+		ImGui::SliderInt("Choose an awesome number", &number, 0, 100);
+		ImGui::Checkbox("Toggle Window Visibility", &isVisible);
+		ImGui::Text("Now this is just some cool text to show off the text function.");
+		ImGui::Button("PRESS ME!");
+
+		ImGui::End();
+	}
+
+
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
@@ -315,7 +331,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		// Tell Direct3D to draw
 		//  - Begins the rendering pipeline on the GPU
 		//  - Do this ONCE PER OBJECT you intend to draw
-		//  - This will use all currently set Direct3D resources (shaders, buffers, etc)
+		//  - This will use all currently set Direct3D resources, (shaders, buffers, etc)
 		//  - DrawIndexed() uses the currently set INDEX BUFFER to look up corresponding
 		//     vertices in the currently set VERTEX BUFFER
 		Graphics::Context->DrawIndexed(

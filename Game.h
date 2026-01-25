@@ -17,6 +17,10 @@ public:
 	void Draw(float deltaTime, float totalTime);
 	void OnResize();
 
+	int number = 4;
+	float colors[4] = {30, 30, 30, 30};
+	bool isVisible = true;
+
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
