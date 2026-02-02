@@ -10,9 +10,9 @@ private:
 	 Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
 	 
 	 // this might not be the best way to name these but 
-	 // this is the Vertex Buffers Indices and the IndexBuffers Vertices respectively
-	 int vertBuffInd; // used when drawing
-	 int indBuffvert; // good for the UI
+	 // this is the Vertex Buffers Vertices and the IndexBuffers IndicesGe respectively
+	 int vertCount; // used when drawing
+	 int indCount; // good for the UI
 
 
 public:
@@ -24,7 +24,7 @@ public:
 	void Draw();
 
 	~Mesh();
-	Mesh();
+	Mesh(int vertexCount, int indexCount, const Vertex* verts, const unsigned int* indices);
 
 };
 
