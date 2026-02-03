@@ -8,14 +8,19 @@
 #include <vector>
 
 #include <DirectXMath.h>
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
 
 #pragma comment(lib, "d3dcompiler.lib")
 
 using namespace DirectX;
 
 
-Mesh::Mesh(int vertexCount, int indexCount, const Vertex* verts, const unsigned int* indices)
+Mesh::Mesh(Vertex vertices[], unsigned int indices[], int verts, int inds)
 {
+	vertCount = verts;
+	indCount = inds;
 	// Create a VERTEX BUFFER
 	// - This holds the vertex data of triangles for a single object
 	// - This buffer is created on the GPU, which is where the data needs to
@@ -26,7 +31,7 @@ Mesh::Mesh(int vertexCount, int indexCount, const Vertex* verts, const unsigned 
 		//  - After the buffer is created, this description variable is unnecessary
 		D3D11_BUFFER_DESC vbd = {};
 		vbd.Usage = D3D11_USAGE_IMMUTABLE;	// Will NEVER change
-		vbd.ByteWidth = sizeof(Vertex) * 3;       // 3 = number of vertices in the buffer
+		vbd.ByteWidth = sizeof(Vertex) * verts;       // 3 = number of vertices in the buffer
 		vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER; // Tells Direct3D this is a vertex buffer
 		vbd.CPUAccessFlags = 0;	// Note: We cannot access the data from C++ (this is good)
 		vbd.MiscFlags = 0;
@@ -36,7 +41,7 @@ Mesh::Mesh(int vertexCount, int indexCount, const Vertex* verts, const unsigned 
 		// - This is how we initially fill the buffer with data
 		// - Essentially, we're specifying a pointer to the data to copy
 		D3D11_SUBRESOURCE_DATA initialVertexData = {};
-		initialVertexData.pSysMem = verts; // pSysMem = Pointer to System Memory
+		initialVertexData.pSysMem = vertices; // pSysMem = Pointer to System Memory
 
 		// Actually create the buffer on the GPU with the initial data
 		// - Once we do this, we'll NEVER CHANGE DATA IN THE BUFFER AGAIN
@@ -54,7 +59,7 @@ Mesh::Mesh(int vertexCount, int indexCount, const Vertex* verts, const unsigned 
 		//  - Bind Flag (used as an index buffer instead of a vertex buffer) 
 		D3D11_BUFFER_DESC ibd = {};
 		ibd.Usage = D3D11_USAGE_IMMUTABLE;	// Will NEVER change
-		ibd.ByteWidth = sizeof(unsigned int) * indCount;	// 3 = number of indices in the buffer
+		ibd.ByteWidth = sizeof(unsigned int) * inds;	// 3 = number of indices in the buffer
 		ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;	// Tells Direct3D this is an index buffer
 		ibd.CPUAccessFlags = 0;	// Note: We cannot access the data from C++ (this is good)
 		ibd.MiscFlags = 0;
@@ -69,14 +74,14 @@ Mesh::Mesh(int vertexCount, int indexCount, const Vertex* verts, const unsigned 
 		Graphics::Device->CreateBuffer(&ibd, &initialIndexData, indexBuffer.GetAddressOf());
 	}
 }
-void Mesh::GetVertexBuffer()
+Microsoft::WRL::ComPtr<ID3D11Buffer> Mesh::GetVertexBuffer()
 {
-	return;
+	return vertexBuffer;
 }
 
-void Mesh::GetIndexBuffer()
+Microsoft::WRL::ComPtr<ID3D11Buffer> Mesh::GetIndexBuffer()
 {
-	return;
+	return indexBuffer;
 }
 
 int Mesh::GetIndexCount()
@@ -91,5 +96,17 @@ int Mesh::GetVertexCount()
 
 void Mesh::Draw()
 {
-	return;
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+	Graphics::Context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
+	Graphics::Context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+	Graphics::Context->DrawIndexed(
+		GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
+		0,     // Offset to the first index we want to use
+		0);    // Offset to add to each index when looking up vertices
 }
+
+Mesh::~Mesh()
+{
+}
+	

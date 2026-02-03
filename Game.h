@@ -2,6 +2,8 @@
 
 #include <d3d11.h>
 #include <wrl/client.h>
+#include <memory>
+#include "Mesh.h"
 
 class Game
 {
@@ -20,6 +22,10 @@ public:
 	int number = 4;
 	float colors[4] = {30, 30, 30, 30};
 	bool isVisible = true;
+	
+	std::shared_ptr<Mesh> weird;
+	std::shared_ptr<Mesh> triangle;
+	std::shared_ptr<Mesh> square;
 
 private:
 
