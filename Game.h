@@ -4,6 +4,7 @@
 #include <wrl/client.h>
 #include <memory>
 #include "Mesh.h"
+#include "BufferStructs.h"
 
 class Game
 {
@@ -27,6 +28,8 @@ public:
 	std::shared_ptr<Mesh> triangle;
 	std::shared_ptr<Mesh> square;
 
+	VertexShaderConstants vsData = { DirectX::XMFLOAT4(1.0f, 0.8f, 0.8f, 1.0f), DirectX::XMFLOAT3(0.1f, 0.0f, 0.0f), 0.0f };
+
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
@@ -46,5 +49,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
 };
 

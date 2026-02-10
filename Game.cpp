@@ -5,9 +5,11 @@
 #include "PathHelpers.h"
 #include "Window.h"
 #include "Mesh.h"
+#include "BufferStructs.h"
 
 #include <DirectXMath.h>
 #include <memory>
+#include <cstring>
 
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
@@ -33,6 +35,16 @@ Game::Game()
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateGeometry();
+
+	static_assert(sizeof(VertexShaderConstants) % 16 == 0, "Constant buffer size must be 16-byte aligned");
+	{
+		D3D11_BUFFER_DESC cbd = {};
+		cbd.Usage = D3D11_USAGE_DYNAMIC;
+		cbd.ByteWidth = sizeof(VertexShaderConstants);
+		cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		Graphics::Device->CreateBuffer(&cbd, 0, vsConstantBuffer.GetAddressOf());
+	}
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -65,6 +77,8 @@ Game::Game()
 		//    these calls will need to happen multiple times per frame
 		Graphics::Context->VSSetShader(vertexShader.Get(), 0, 0);
 		Graphics::Context->PSSetShader(pixelShader.Get(), 0, 0);
+
+		Graphics::Context->VSSetConstantBuffers(0, 1, vsConstantBuffer.GetAddressOf());
 	}
 }
 
@@ -267,6 +281,9 @@ void Game::Update(float deltaTime, float totalTime)
 		ImGui::Checkbox("Toggle Window Visibility", &isVisible);
 		ImGui::Text("Now this is just some cool text to show off the text function.");
 		ImGui::Button("PRESS ME!");
+
+		ImGui::ColorEdit4("Tint", &vsData.colorTint.x);
+		ImGui::DragFloat3("Offset", &vsData.offset.x, 0.01f, -1.0f, 1.0f);
 		
 		if (ImGui::CollapsingHeader("Mesh Info"))
 		{
@@ -308,6 +325,16 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
+	{
+		VertexShaderConstants constants = vsData;
+		constants.padding = 0.0f;
+
+		D3D11_MAPPED_SUBRESOURCE mapped = {};
+		Graphics::Context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+		std::memcpy(mapped.pData, &constants, sizeof(constants));
+		Graphics::Context->Unmap(vsConstantBuffer.Get(), 0);
+	}
+
 	// DRAW geometry
 	// - These steps are generally repeated for EACH object you draw
 	// - Other Direct3D calls will also be necessary to do more complex things
@@ -342,6 +369,12 @@ void Game::Draw(float deltaTime, float totalTime)
 			Graphics::DepthBufferDSV.Get());
 	}
 }
+
+
+
+
+
+
 
 
 
