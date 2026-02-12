@@ -3,12 +3,16 @@
 class Transform
 {
 public:
+
+	Transform();
+
 	void SetPosition(float x, float y, float z);
 	void SetPosition(DirectX::XMFLOAT3 position);
 	void SetRotation(float pitch, float yaw, float roll);
 	void SetRotation(DirectX::XMFLOAT3 rotation); // XMFLOAT4 for quaternion
 	void SetScale(float x, float y, float z);
 	void SetScale(DirectX::XMFLOAT3 scale);
+	void MoveAbsolute(float x, float y, float z);
 
 	DirectX::XMFLOAT3 GetPosition();
 	DirectX::XMFLOAT3 GetPitchYawRoll(); // XMFLOAT4 GetRotation() for quaternion
@@ -44,6 +48,10 @@ Alternatively, it could be a true quaternion, stored as a 4D vector, though this
 assignments assume you’re simply storing the three angles. Feel free to experiment!
 */
 
+private:
+	DirectX::XMFLOAT3 position;
+	DirectX::XMFLOAT3 pitchYawRoll;
+	DirectX::XMFLOAT3 scale;
 
 };
 
