@@ -11,6 +11,7 @@
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
+#include "Entity.h"
 
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -92,6 +93,16 @@ int Mesh::GetIndexCount()
 int Mesh::GetVertexCount()
 {
 	return vertCount;
+}
+
+std::shared_ptr<Mesh> Entity::GetMesh()
+{
+	return std::shared_ptr<Mesh>();
+}
+
+std::shared_ptr<Transform> Entity::GetTransform()
+{
+	return std::shared_ptr<Transform>();
 }
 
 void Mesh::Draw()
