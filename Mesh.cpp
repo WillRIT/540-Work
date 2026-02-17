@@ -95,16 +95,6 @@ int Mesh::GetVertexCount()
 	return vertCount;
 }
 
-std::shared_ptr<Mesh> Entity::GetMesh()
-{
-	return std::shared_ptr<Mesh>();
-}
-
-std::shared_ptr<Transform> Entity::GetTransform()
-{
-	return std::shared_ptr<Transform>();
-}
-
 void Mesh::Draw()
 {
 	UINT stride = sizeof(Vertex);
@@ -120,4 +110,3 @@ void Mesh::Draw()
 Mesh::~Mesh()
 {
 }
-	

@@ -5,6 +5,9 @@
 #include <memory>
 #include "Mesh.h"
 #include "BufferStructs.h"
+#include <vector>
+#include "Entity.h"
+#include <DirectXMath.h>
 
 class Game
 {
@@ -24,13 +27,18 @@ public:
 	float colors[4] = {30, 30, 30, 30};
 	bool isVisible = true;
 	
+	std::vector<Entity> entities; 
+
 	std::shared_ptr<Mesh> weird;
 	std::shared_ptr<Mesh> triangle;
 	std::shared_ptr<Mesh> square;
 
-	VertexShaderConstants vsData = { DirectX::XMFLOAT4(1.0f, 0.8f, 0.8f, 1.0f), DirectX::XMFLOAT3(0.1f, 0.0f, 0.0f), 0.0f };
 
 private:
+	bool animateEntities = true;
+	std::vector<DirectX::XMFLOAT3> entityPositions;
+	std::vector<DirectX::XMFLOAT3> entityRotations;
+	std::vector<DirectX::XMFLOAT3> entityScales;
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	void LoadShaders();

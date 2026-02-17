@@ -6,10 +6,14 @@
 #include "Window.h"
 #include "Mesh.h"
 #include "BufferStructs.h"
+#include "Entity.h"
 
 #include <DirectXMath.h>
 #include <memory>
 #include <cstring>
+#include <cmath>
+#include <string>
+
 
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
@@ -35,16 +39,22 @@ Game::Game()
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateGeometry();
+	entities.push_back(Entity(weird));
+	entities.push_back(Entity(triangle));
+	entities.push_back(Entity(square));
+	entities.push_back(Entity(weird));
+	entityPositions.assign(entities.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
+	entityRotations.assign(entities.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
+	entityScales.assign(entities.size(), XMFLOAT3(1.0f, 1.0f, 1.0f));
 
-	static_assert(sizeof(VertexShaderConstants) % 16 == 0, "Constant buffer size must be 16-byte aligned");
-	{
-		D3D11_BUFFER_DESC cbd = {};
-		cbd.Usage = D3D11_USAGE_DYNAMIC;
-		cbd.ByteWidth = sizeof(VertexShaderConstants);
-		cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		Graphics::Device->CreateBuffer(&cbd, 0, vsConstantBuffer.GetAddressOf());
-	}
+
+	D3D11_BUFFER_DESC cbd = {};
+	cbd.Usage = D3D11_USAGE_DYNAMIC;
+	cbd.ByteWidth = sizeof(VertexShaderConstants);
+	cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	Graphics::Device->CreateBuffer(&cbd, 0, vsConstantBuffer.GetAddressOf());
+	
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -249,7 +259,6 @@ void Game::OnResize()
 	
 }
 
-
 // --------------------------------------------------------
 // Update your game here - user input, move objects, AI, etc.
 // --------------------------------------------------------
@@ -279,15 +288,17 @@ void Game::Update(float deltaTime, float totalTime)
 		ImGui::ColorEdit4("RGBA color editor", &colors[0]);
 		ImGui::SliderInt("Choose an awesome number", &number, 0, 100);
 		ImGui::Checkbox("Toggle Window Visibility", &isVisible);
+		ImGui::Checkbox("Animate Entities", &animateEntities);
 		ImGui::Text("Now this is just some cool text to show off the text function.");
 		ImGui::Button("PRESS ME!");
-
+		/*
 		ImGui::ColorEdit4("Tint", &vsData.colorTint.x);
 		ImGui::DragFloat3("Offset", &vsData.offset.x, 0.01f, -1.0f, 1.0f);
-		
+		*/
 		if (ImGui::CollapsingHeader("Mesh Info"))
 		{
 			ImGui::Text("Triangle Triangle: 1");
+
 			ImGui::Text("Triangle Verts: %d", triangle->GetVertexCount());
 			ImGui::Text("Triangle Indices: %d", triangle->GetIndexCount());
 
@@ -300,10 +311,48 @@ void Game::Update(float deltaTime, float totalTime)
 			ImGui::Text("Penta Indices: %d", weird->GetIndexCount());
 		}
 
+		if (ImGui::CollapsingHeader("Entity Transforms"))
+		{
+			for (size_t i = 0; i < entities.size(); i++)
+			{
+				std::string label = "Entity " + std::to_string(i);
+				if (ImGui::TreeNode(label.c_str()))
+				{
+					ImGui::PushID(static_cast<int>(i));
+					ImGui::DragFloat3("Position", &entityPositions[i].x, 0.01f);
+					ImGui::DragFloat3("Rotation", &entityRotations[i].x, 0.01f);
+					ImGui::DragFloat3("Scale", &entityScales[i].x, 0.01f, 0.01f, 5.0f);
+					ImGui::PopID();
+
+
+					ImGui::TreePop();
+				}
+			}
+		}
+
 		ImGui::End();
 	}
 
+	for (size_t i = 0; i < entities.size(); i++)
+	{
+		XMFLOAT3 position = entityPositions[i];
+		XMFLOAT3 rotation = entityRotations[i];
+		XMFLOAT3 scale = entityScales[i];
 
+		if (animateEntities)
+		{
+			float t = totalTime + static_cast<float>(i);
+			float radius = 0.2f + 0.1f * static_cast<float>(i);
+			position.x += std::cos(t * 0.7f) * radius;
+			position.y += std::sin(t * 0.9f) * radius;
+			rotation.z += t;
+		}
+
+		auto transform = entities[i].GetTransform();
+		transform->SetPosition(position);
+		transform->SetRotation(rotation);
+		transform->SetScale(scale);
+	}
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
@@ -326,13 +375,16 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 
 	{
-		VertexShaderConstants constants = vsData;
-		constants.padding = 0.0f;
-
-		D3D11_MAPPED_SUBRESOURCE mapped = {};
-		Graphics::Context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-		std::memcpy(mapped.pData, &constants, sizeof(constants));
-		Graphics::Context->Unmap(vsConstantBuffer.Get(), 0);
+		for (int i = 0; i < entities.size(); i++)
+		
+		{
+			VertexShaderConstants vsData = { DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), entities[i].GetTransform()->GetWorldMatrix() };
+			D3D11_MAPPED_SUBRESOURCE mapped = {};
+			Graphics::Context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+			std::memcpy(mapped.pData, &vsData, sizeof(vsData));
+			Graphics::Context->Unmap(vsConstantBuffer.Get(), 0);
+			entities[i].Draw();
+		}
 	}
 
 	// DRAW geometry
@@ -369,12 +421,3 @@ void Game::Draw(float deltaTime, float totalTime)
 			Graphics::DepthBufferDSV.Get());
 	}
 }
-
-
-
-
-
-
-
-
-

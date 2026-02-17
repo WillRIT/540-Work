@@ -125,7 +125,7 @@ DirectX::XMFLOAT3 Transform::GetScale()
 
 DirectX::XMFLOAT4X4 Transform::GetWorldMatrix()
 {
-	XMMATRIX transMat = XMMatrixTranslation(position.x, position.y, position.y);
+	XMMATRIX transMat = XMMatrixTranslation(position.x, position.y, position.z);
 	XMMATRIX rotMat = XMMatrixRotationRollPitchYaw(pitchYawRoll.x, pitchYawRoll.y, pitchYawRoll.z);
 	XMMATRIX scaleMat = XMMatrixScaling(scale.x, scale.y, scale.z);
 
@@ -137,7 +137,7 @@ DirectX::XMFLOAT4X4 Transform::GetWorldMatrix()
 
 DirectX::XMFLOAT4X4 Transform::GetWorldInverseTransposeMatrix()
 {
-	XMMATRIX transMat = XMMatrixTranslation(position.x, position.y, position.y);
+	XMMATRIX transMat = XMMatrixTranslation(position.x, position.y, position.z);
 	XMMATRIX rotMat = XMMatrixRotationRollPitchYaw(pitchYawRoll.x, pitchYawRoll.y, pitchYawRoll.z);
 	XMMATRIX scaleMat = XMMatrixScaling(scale.x, scale.y, scale.z);
 
