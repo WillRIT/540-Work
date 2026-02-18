@@ -75,6 +75,19 @@ void Transform::MoveAbsolute(DirectX::XMFLOAT3 offset)
 	matrixDirty = true;
 }
 
+void Transform::MoveRelative(float x, float y, float z)
+{
+	XMVECTOR offset = XMVectorSet(x, y, z, 0.0f);
+	XMVECTOR Quat = XMQuaternionRotationRollPitchYawFromVector(XMLoadFloat3(&pitchYawRoll));
+
+	// Actually Rotate
+	XMVECTOR dir = XMVector3Rotate(offset, Quat);
+
+	MoveAbsolute(XMVectorGetX(dir), XMVectorGetY(dir), XMVectorGetZ(dir));
+
+	matrixDirty = true;
+}
+
 void Transform::Rotate(float pitch, float yaw, float roll)
 {
 	pitchYawRoll.x += pitch;
@@ -107,6 +120,37 @@ void Transform::Scale(DirectX::XMFLOAT3 scaleOff)
 	scale.z = scaleOff.z;
 	matrixDirty = true;
 }
+
+DirectX::XMFLOAT3 Transform::GetUp()
+{
+	XMFLOAT3 dir;
+	XMVECTOR up = XMVectorSet(0, 1, 0, 0);
+	XMVECTOR Quat = XMQuaternionRotationRollPitchYawFromVector(XMLoadFloat3(&pitchYawRoll));
+	XMStoreFloat3(&dir, XMVector3Rotate(up, Quat));
+
+	return dir;
+}
+
+DirectX::XMFLOAT3 Transform::GetRight()
+{
+	XMFLOAT3 dir;
+	XMVECTOR right = XMVectorSet(1, 0, 0, 0);
+	XMVECTOR Quat = XMQuaternionRotationRollPitchYawFromVector(XMLoadFloat3(&pitchYawRoll));
+	XMStoreFloat3(&dir, XMVector3Rotate(right, Quat));
+
+	return dir;
+}
+
+DirectX::XMFLOAT3 Transform::GetForward()
+{
+	XMFLOAT3 dir;
+	XMVECTOR forward = XMVectorSet(0, 0, 1, 0);
+	XMVECTOR Quat = XMQuaternionRotationRollPitchYawFromVector(XMLoadFloat3(&pitchYawRoll));
+	XMStoreFloat3(&dir, XMVector3Rotate(forward, Quat));
+
+	return dir;
+}
+
 
 DirectX::XMFLOAT3 Transform::GetPosition()
 {

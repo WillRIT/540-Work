@@ -66,6 +66,9 @@ Game::Game()
 	//ImGui::StyleColorsLight();
 	//ImGui::StyleColorsClassic();
 
+	//Making my badass camera yuuuup
+
+	camera = std::make_shared<Camera>();
 
 	// Set initial graphics API state
 	//  - These settings persist until we change them
@@ -378,7 +381,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		for (int i = 0; i < entities.size(); i++)
 		
 		{
-			VertexShaderConstants vsData = { DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), entities[i].GetTransform()->GetWorldMatrix() };
+			VertexShaderConstants vsData = { DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), entities[i].GetTransform()->GetWorldMatrix(), camera->GetViewMatrix(), camera->GetProjectionMatrix()};
 			D3D11_MAPPED_SUBRESOURCE mapped = {};
 			Graphics::Context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 			std::memcpy(mapped.pData, &vsData, sizeof(vsData));

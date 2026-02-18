@@ -7,6 +7,7 @@
 #include "BufferStructs.h"
 #include <vector>
 #include "Entity.h"
+#include "Camera.h"
 #include <DirectXMath.h>
 
 class Game
@@ -27,6 +28,8 @@ public:
 	float colors[4] = {30, 30, 30, 30};
 	bool isVisible = true;
 	
+	std::shared_ptr<Camera> camera;
+
 	std::vector<Entity> entities; 
 
 	std::shared_ptr<Mesh> weird;
