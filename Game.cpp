@@ -259,7 +259,7 @@ void Game::CreateGeometry()
 // --------------------------------------------------------
 void Game::OnResize()
 {
-	
+	camera->UpdateProjectionMatrix(Window::AspectRatio());
 }
 
 // --------------------------------------------------------

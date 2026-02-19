@@ -11,6 +11,9 @@ Camera::Camera() :
 {
 }
 
+Camera::~Camera()
+{}
+
 
 DirectX::XMFLOAT4X4 Camera::GetViewMatrix()
 {
@@ -35,13 +38,13 @@ void Camera::UpdateProjectionMatrix(float aspectRatio)
 
 void Camera::UpdateViewMatrix()
 {
-	DirectX::XMVECTOR worldUp = DirectX::XMVECTOR(0, 1, 0, 0);
-	DirectX::XMVECTOR forward = XMLoadFloat3(&transform.GetForward());
-	DirectX::XMVECTOR position = XMLoadFloat3(&transform.GetPosition());
+	DirectX::XMVECTOR worldUp = DirectX::XMVectorSet(0, 1, 0, 0);
+	DirectX::XMFLOAT3 forward = transform->GetForward();
+	DirectX::XMFLOAT3 position = transform->GetPosition();
 
 	DirectX::XMMATRIX newView = DirectX::XMMatrixLookToLH(
-		position, 
-		forward, 
+		DirectX::XMLoadFloat3(&position),
+		DirectX::XMLoadFloat3(&forward), 
 		worldUp);
 
 	DirectX::XMStoreFloat4x4(&viewMat, newView);
@@ -51,32 +54,32 @@ void Camera::Update(float dt)
 {
 	if (Input::KeyDown('W'))
 	{
-		transform.MoveRelative(0, 0, movSpeed * dt);
+		transform->MoveRelative(0, 0, movSpeed * dt);
 	}
 
 	if (Input::KeyDown('S'))
 	{
-		transform.MoveRelative(0, 0, -movSpeed * dt);
+		transform->MoveRelative(0, 0, -movSpeed * dt);
 	}
 
 	if (Input::KeyDown('A'))
 	{
-		transform.MoveRelative(-movSpeed * dt, 0, 0);
+		transform->MoveRelative(-movSpeed * dt, 0, 0);
 	}
 
 	if (Input::KeyDown('D'))
 	{
-		transform.MoveRelative(movSpeed * dt, 0, 0);
+		transform->MoveRelative(movSpeed * dt, 0, 0);
 	}
 
 	if (Input::KeyDown(VK_SPACE))
 	{
-		transform.MoveAbsolute(0, movSpeed * dt, 0);
+		transform->MoveAbsolute(0, movSpeed * dt, 0);
 	}
 
 	if (Input::KeyDown(VK_SHIFT))
 	{
-		transform.MoveAbsolute(0, -movSpeed * dt, 0);
+		transform->MoveAbsolute(0, -movSpeed * dt, 0);
 	}
 
 	if (Input::MouseLeftDown())
@@ -84,7 +87,7 @@ void Camera::Update(float dt)
 		int cursorY = Input::GetMouseYDelta();
 		int cursorX = Input::GetMouseXDelta();
 
-		transform.Rotate(cursorY * mouseSpeed * dt, cursorX * mouseSpeed * dt, 0);
+		transform->Rotate(cursorY * mouseSpeed * dt, cursorX * mouseSpeed * dt, 0);
 		// Figure out how to clamp rotation for X....
 	}
 

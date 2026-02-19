@@ -9,7 +9,8 @@ Transform::Transform() :
 	up(0.0f, 1.0f, 0.0f),
 	right(1.0f, 0.0f, 0.0f),
 	forward(0.0f, 0.0f, 1.0f),
-	matrixDirty(false)
+	matrixDirty(false),
+	vectorsDirty(false)
 {
 	XMStoreFloat4x4(&worldMatrix, XMMatrixIdentity());
 	XMStoreFloat4x4(&worldInverseTransposeMatrix, XMMatrixIdentity());
@@ -82,6 +83,18 @@ void Transform::MoveRelative(float x, float y, float z)
 
 	// Actually Rotate
 	XMVECTOR dir = XMVector3Rotate(offset, Quat);
+
+	MoveAbsolute(XMVectorGetX(dir), XMVectorGetY(dir), XMVectorGetZ(dir));
+
+	matrixDirty = true;
+}
+
+void Transform::MoveRelative(DirectX::XMFLOAT3 offset)
+{
+	XMVECTOR Quat = XMQuaternionRotationRollPitchYawFromVector(XMLoadFloat3(&pitchYawRoll));
+
+	// Actually Rotate
+	XMVECTOR dir = XMVector3Rotate(XMVectorSet(offset.x, offset.y, offset.z, 0.0), Quat);
 
 	MoveAbsolute(XMVectorGetX(dir), XMVectorGetY(dir), XMVectorGetZ(dir));
 

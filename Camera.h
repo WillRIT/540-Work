@@ -1,13 +1,13 @@
 #pragma once
 #include <DirectXMath.h>
 #include "Transform.h"
+#include <memory>
 
 class Camera
 {
 public:
 	Camera();
 	~Camera();
-	Transform transform;
 
 
 	// Camera specific floats
@@ -33,6 +33,6 @@ public:
 private:
 	DirectX::XMFLOAT4X4 viewMat;
 	DirectX::XMFLOAT4X4 projMat;
-
+	std::shared_ptr <Transform> transform;
 };
 
