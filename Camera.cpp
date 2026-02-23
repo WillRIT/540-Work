@@ -1,28 +1,34 @@
 #include "Camera.h"
 #include "Input.h"
+#include "Window.h"
 
-Camera::Camera() :
-	fov(DirectX::XM_PIDIV4),
+Camera::Camera(DirectX::XMFLOAT3 initPos, float initialFov) :
+	fov(initialFov),
 	nearClip(0.01f),
 	farClip(100.0f),
 	movSpeed(5.0f),
 	mouseSpeed(0.1f),
 	isActive(true)
 {
+	transform = std::make_shared<Transform>();
+	transform->SetPosition(initPos);
+	UpdateViewMatrix();
+	UpdateProjectionMatrix(Window::AspectRatio());
 }
 
 Camera::~Camera()
 {}
 
+std::shared_ptr<Transform> Camera::GetTransform() { return transform; }
 
 DirectX::XMFLOAT4X4 Camera::GetViewMatrix()
 {
-	return DirectX::XMFLOAT4X4();
+	return viewMat;
 }
 
 DirectX::XMFLOAT4X4 Camera::GetProjectionMatrix()
 {
-	return DirectX::XMFLOAT4X4();
+	return projMat;
 }
 
 void Camera::UpdateProjectionMatrix(float aspectRatio)
@@ -52,6 +58,9 @@ void Camera::UpdateViewMatrix()
 
 void Camera::Update(float dt)
 {
+	// Only update cameras that are active; Game will ensure only one is active
+	if (!isActive) return;
+
 	if (Input::KeyDown('W'))
 	{
 		transform->MoveRelative(0, 0, movSpeed * dt);

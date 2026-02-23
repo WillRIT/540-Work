@@ -6,7 +6,8 @@
 class Camera
 {
 public:
-	Camera();
+	// Modified constructor: allow initial position and FOV without adding new methods
+	Camera(DirectX::XMFLOAT3 initPos = DirectX::XMFLOAT3(0,0,-5), float initialFov = DirectX::XM_PIDIV4);
 	~Camera();
 
 
@@ -18,7 +19,7 @@ public:
 	float mouseSpeed;
 	bool isActive;
 
-
+	std::shared_ptr<Transform> GetTransform();
 	DirectX::XMFLOAT4X4 GetViewMatrix();
 	DirectX::XMFLOAT4X4 GetProjectionMatrix();
 
@@ -26,13 +27,10 @@ public:
 	void UpdateViewMatrix();
 	void Update(float dt);
 
-
-	
-
-
+protected:
+	std::shared_ptr <Transform> transform;
 private:
 	DirectX::XMFLOAT4X4 viewMat;
 	DirectX::XMFLOAT4X4 projMat;
-	std::shared_ptr <Transform> transform;
 };
 

@@ -68,7 +68,19 @@ Game::Game()
 
 	//Making my badass camera yuuuup
 
+	// Create camera 1 with default constructor
 	camera = std::make_shared<Camera>();
+	// Create camera 2 with different position and FOV
+	camera2 = std::make_shared<Camera>(DirectX::XMFLOAT3(0.0f, 2.0f, -8.0f), DirectX::XM_PIDIV4 / 1.5f);
+
+	// Only one active at start: camera is active, camera2 inactive
+	camera->isActive = true;
+	camera2->isActive = false;
+
+	// Keep cameras vector synced with shared_ptrs by storing copies
+	cameras.clear();
+	cameras.push_back(*camera);
+	cameras.push_back(*camera2);
 
 	// Set initial graphics API state
 	//  - These settings persist until we change them
@@ -259,7 +271,10 @@ void Game::CreateGeometry()
 // --------------------------------------------------------
 void Game::OnResize()
 {
-	camera->UpdateProjectionMatrix(Window::AspectRatio());
+	for (int i = 0; i < cameras.size(); i++) {
+		cameras[i].UpdateProjectionMatrix(Window::AspectRatio());
+
+	}
 }
 
 // --------------------------------------------------------
@@ -280,8 +295,14 @@ void Game::Update(float deltaTime, float totalTime)
 	// Determine new input capture
 	Input::SetKeyboardCapture(io.WantCaptureKeyboard);
 	Input::SetMouseCapture(io.WantCaptureMouse);
+	
+	// Update only the active camera
+	if (camera->isActive)
+		camera->Update(deltaTime);
+	else if (camera2->isActive)
+		camera2->Update(deltaTime);
+	
 	// Make a New Window
-
 	if (isVisible)
 	{
 		ImGui::Begin("My AWESOME CUSTOM Window");
@@ -294,6 +315,32 @@ void Game::Update(float deltaTime, float totalTime)
 		ImGui::Checkbox("Animate Entities", &animateEntities);
 		ImGui::Text("Now this is just some cool text to show off the text function.");
 		ImGui::Button("PRESS ME!");
+
+		// Camera toggle UI: mutual-exclusive radio buttons
+		ImGui::Separator();
+		ImGui::Text("Active Camera");
+		if (ImGui::RadioButton("Camera 1", camera->isActive))
+		{
+			camera->isActive = true;
+			camera2->isActive = false;
+		}
+		ImGui::SameLine();
+		if (ImGui::RadioButton("Camera 2", camera2->isActive))
+		{
+			camera2->isActive = true;
+			camera->isActive = false;
+		}
+
+		if (ImGui::CollapsingHeader("Camera Info"))
+		{
+			ImGui::Text("Camera 1:");
+			ImGui::Text("Position: (%.2f, %.2f, %.2f)", camera->GetTransform()->GetPosition().x, camera->GetTransform()->GetPosition().y, camera->GetTransform()->GetPosition().z);
+			ImGui::Text("Rotation (Pitch/Yaw/Roll): (%.2f, %.2f, %.2f)", camera->GetTransform()->GetPitchYawRoll().x, camera->GetTransform()->GetPitchYawRoll().y, camera->GetTransform()->GetPitchYawRoll().z);
+			ImGui::Text("FOV: %.2f degrees", camera->fov * (180.0f / XM_PI));
+		}
+
+
+
 		/*
 		ImGui::ColorEdit4("Tint", &vsData.colorTint.x);
 		ImGui::DragFloat3("Offset", &vsData.offset.x, 0.01f, -1.0f, 1.0f);
@@ -381,7 +428,9 @@ void Game::Draw(float deltaTime, float totalTime)
 		for (int i = 0; i < entities.size(); i++)
 		
 		{
-			VertexShaderConstants vsData = { DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), entities[i].GetTransform()->GetWorldMatrix(), camera->GetViewMatrix(), camera->GetProjectionMatrix()};
+			// Use active camera for rendering
+			Camera* activeCam = camera->isActive ? camera.get() : camera2.get();
+			VertexShaderConstants vsData = { DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), entities[i].GetTransform()->GetWorldMatrix(), activeCam->GetViewMatrix(), activeCam->GetProjectionMatrix()};
 			D3D11_MAPPED_SUBRESOURCE mapped = {};
 			Graphics::Context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 			std::memcpy(mapped.pData, &vsData, sizeof(vsData));

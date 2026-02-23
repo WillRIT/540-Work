@@ -29,7 +29,9 @@ public:
 	bool isVisible = true;
 	
 	std::shared_ptr<Camera> camera;
+	std::shared_ptr<Camera> camera2;
 
+	std::vector<Camera> cameras;
 	std::vector<Entity> entities; 
 
 	std::shared_ptr<Mesh> weird;
