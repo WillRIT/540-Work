@@ -9,6 +9,7 @@
 #include "Entity.h"
 #include "Camera.h"
 #include <DirectXMath.h>
+#include "Material.h"
 
 class Game
 {
@@ -23,6 +24,8 @@ public:
 	void Update(float deltaTime, float totalTime);
 	void Draw(float deltaTime, float totalTime);
 	void OnResize();
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> LoadPixelShader(const wchar_t* compiledShaderPath);
+	Microsoft::WRL::ComPtr<ID3D11VertexShader> LoadVertexShader(const wchar_t* compiledShaderPath);
 
 	int number = 4;
 	float colors[4] = {30, 30, 30, 30};
@@ -32,7 +35,8 @@ public:
 	std::shared_ptr<Camera> camera2;
 
 	std::vector<Camera> cameras;
-	std::vector<Entity> entities; 
+	std::vector<Entity> entities;
+	std::vector<std::shared_ptr<Material>> materials;
 
 	std::shared_ptr<Mesh> weird;
 	std::shared_ptr<Mesh> triangle;
@@ -46,7 +50,6 @@ private:
 	std::vector<DirectX::XMFLOAT3> entityScales;
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
-	void LoadShaders();
 	void CreateGeometry();
 
 	// Note the usage of ComPtr below
@@ -54,12 +57,6 @@ private:
 	//     Component Object Model, which DirectX objects do
 	//  - More info here: https://github.com/Microsoft/DirectXTK/wiki/ComPtr
 
-	// Buffers to hold actual geometry data
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
-
-	// Shaders and shader-related constructs
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 

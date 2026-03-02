@@ -15,6 +15,7 @@ private:
 	 // this is the Vertex Buffers Vertices and the IndexBuffers IndicesGe respectively
 	 int vertCount; // used when drawing
 	 int indCount; // good for the UI
+	 void MakeBuffers(Vertex* vertArray, size_t numVerts, unsigned int* indexArray, size_t numIndices);
 
 
 public:
