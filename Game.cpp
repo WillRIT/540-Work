@@ -90,17 +90,22 @@ Game::Game()
 				//  - This describes the layout of data sent to a vertex shader
 				//  - In other words, it describes how to interpret data (numbers) in a vertex buffer
 				//  - Doing this NOW because it requires a vertex shader's byte code to verify against!
-		D3D11_INPUT_ELEMENT_DESC inputElements[2] = {};
+		D3D11_INPUT_ELEMENT_DESC inputElements[3] = {};
 
 		// Set up the first element - a position, which is 3 float values
 		inputElements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;				// Most formats are described as color channels; really it just means "Three 32-bit floats"
 		inputElements[0].SemanticName = "POSITION";							// This is "POSITION" - needs to match the semantics in our vertex shader input!
 		inputElements[0].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// How far into the vertex is this?  Assume it's after the previous element
 
-		// Set up the second element - a color, which is 4 float values
-		inputElements[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;			// 4x 32-bit floats
-		inputElements[1].SemanticName = "COLOR";							// Match our vertex shader input!
+		// Set up the second element - UV coordinates, which is 2 float values
+		inputElements[1].Format = DXGI_FORMAT_R32G32_FLOAT;					// 2x 32-bit floats
+		inputElements[1].SemanticName = "TEXCOORD";							// Match our vertex shader input!
 		inputElements[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// After the previous element
+
+		// Set up the third element - a normal, which is 3 float values
+		inputElements[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;				// 3x 32-bit floats
+		inputElements[2].SemanticName = "NORMAL";							// Match our vertex shader input!
+		inputElements[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// After the previous element
 
 
 		// Create the input layout, verifying our description against actual shader code
@@ -185,89 +190,83 @@ void Game::CreateGeometry()
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> basicPixelShader = LoadPixelShader(FixPath(L"PixelShader.cso").c_str());
 
 
-	// Create some temporary variables to represent colors
-	// - Not necessary, just makes things more readable
-	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	//// Set up the vertices of the triangle we would like to draw
+	//// - We're going to copy this array, exactly as it exists in CPU memory
+	////    over to a Direct3D-controlled data structure on the GPU (the vertex buffer)
+	//// - Note: Since we don't have a camera or really any concept of
+	////    a "3d world" yet, we're simply describing positions within the
+	////    bounds of how the rasterizer sees our screen: [-1 to +1] on X and Y
+	//// - This means (0,0) is at the very center of the screen.
+	//// - These are known as "Normalized Device Coordinates" or "Homogeneous 
+	////    Screen Coords", which are ways to describe a position without
+	////    knowing the exact size (in pixels) of the image/window/etc.  
+	//// - Long story short: Resizing the window also resizes the triangle,
+	////    since we're describing the triangle in terms of the window itself
+	//Vertex triVertices[] =
+	//{
+	//	{ XMFLOAT3(+0.0f, +0.5f, +0.0f), XMFLOAT2(0.5f, 0.0f), XMFLOAT3(0, 0, -1) },
+	//	{ XMFLOAT3(+0.5f, -0.5f, +0.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT3(0, 0, -1) },
+	//	{ XMFLOAT3(-0.5f, -0.5f, +0.0f), XMFLOAT2(0.0f, 1.0f), XMFLOAT3(0, 0, -1) },
 
-	// Set up the vertices of the triangle we would like to draw
-	// - We're going to copy this array, exactly as it exists in CPU memory
-	//    over to a Direct3D-controlled data structure on the GPU (the vertex buffer)
-	// - Note: Since we don't have a camera or really any concept of
-	//    a "3d world" yet, we're simply describing positions within the
-	//    bounds of how the rasterizer sees our screen: [-1 to +1] on X and Y
-	// - This means (0,0) is at the very center of the screen.
-	// - These are known as "Normalized Device Coordinates" or "Homogeneous 
-	//    Screen Coords", which are ways to describe a position without
-	//    knowing the exact size (in pixels) of the image/window/etc.  
-	// - Long story short: Resizing the window also resizes the triangle,
-	//    since we're describing the triangle in terms of the window itself
-	Vertex triVertices[] =
-	{
-		{ XMFLOAT3(+0.0f, +0.5f, +0.0f), red },
-		{ XMFLOAT3(+0.5f, -0.5f, +0.0f), blue },
-		{ XMFLOAT3(-0.5f, -0.5f, +0.0f), green },
+	//};
+	//Vertex squareVertices[] =
+	//{
+	//	{ XMFLOAT3(+0.7f, +0.7f, +0.0f), XMFLOAT2(1.0f, 0.0f), XMFLOAT3(0, 0, -1) },
+	//	{ XMFLOAT3(+0.7f, +0.5f, +0.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT3(0, 0, -1) },
+	//	{ XMFLOAT3(+0.5f, +0.5f, +0.0f), XMFLOAT2(0.0f, 1.0f), XMFLOAT3(0, 0, -1) },
+	//	{ XMFLOAT3(+0.5f, +0.7f, +0.0f), XMFLOAT2(0.0f, 0.0f), XMFLOAT3(0, 0, -1) },
+	//};
 
-	};
-	Vertex squareVertices[] =
-	{
-		{ XMFLOAT3(+0.7f, +0.7f, +0.0f), red },
-		{ XMFLOAT3(+0.7f, +0.5f, +0.0f), blue },
-		{ XMFLOAT3(+0.5f, +0.5f, +0.0f), green },
-		{ XMFLOAT3(+0.5f, +0.7f, +0.0f), green },
-	};
+	//Vertex weirdVertices[] =
+	//{
+	//	{ XMFLOAT3(0.0f, 0.0f, 0.0f),    XMFLOAT2(0.5f, 0.5f), XMFLOAT3(0, 0, -1) },	// Center
+	//	{ XMFLOAT3(0.0f, 0.8f, 0.0f),     XMFLOAT2(0.5f, 0.0f), XMFLOAT3(0, 0, -1) },	// Top
+	//	{ XMFLOAT3(0.76f, 0.25f, 0.0f),   XMFLOAT2(1.0f, 0.25f), XMFLOAT3(0, 0, -1) },	// Top-right
+	//	{ XMFLOAT3(0.47f, -0.65f, 0.0f),  XMFLOAT2(0.85f, 0.9f), XMFLOAT3(0, 0, -1) },	// Bottom-right
+	//	{ XMFLOAT3(-0.47f, -0.65f, 0.0f), XMFLOAT2(0.15f, 0.9f), XMFLOAT3(0, 0, -1) },	// Bottom-left
+	//	{ XMFLOAT3(-0.76f, 0.25f, 0.0f),  XMFLOAT2(0.0f, 0.25f), XMFLOAT3(0, 0, -1) },	// Top-left
+	//};
 
-	Vertex weirdVertices[] =
-	{
-		{ XMFLOAT3(0.0f, 0.0f, 0.0f), blue },		// Center
-		{ XMFLOAT3(0.0f, 0.8f, 0.0f), red },		// Top
-		{ XMFLOAT3(0.76f, 0.25f, 0.0f), green },	// Top-right
-		{ XMFLOAT3(0.47f, -0.65f, 0.0f), red },	// Bottom-right
-		{ XMFLOAT3(-0.47f, -0.65f, 0.0f), green },	// Bottom-left
-		{ XMFLOAT3(-0.76f, 0.25f, 0.0f), red },	// Top-left
-	};
+	//// Set up indices, which tell us which vertices to use and in which order
+	//// - This is redundant for just 3 vertices, but will be more useful later
+	//// - Indices are technically not required if the vertices are in the buffer 
+	////    in the correct order and each one will be used exactly once
+	//// - But just to see how it's done...
+	//unsigned int triIndices[] = { 0, 1, 2 };
+	//unsigned int squareIndices[] = { 0, 1, 2, 0, 2, 3 };
+	//unsigned int weirdIndices[] = {
+	//0, 1, 2,
+	//	0, 2, 3,
+	//	0, 3, 4,
+	//	0, 4, 5,
+	//	0, 5, 1
+	//};
 
-	// Set up indices, which tell us which vertices to use and in which order
-	// - This is redundant for just 3 vertices, but will be more useful later
-	// - Indices are technically not required if the vertices are in the buffer 
-	//    in the correct order and each one will be used exactly once
-	// - But just to see how it's done...
-	unsigned int triIndices[] = { 0, 1, 2 };
-	unsigned int squareIndices[] = { 0, 1, 2, 0, 2, 3 };
-	unsigned int weirdIndices[] = {
-	0, 1, 2,
-		0, 2, 3,
-		0, 3, 4,
-		0, 4, 5,
-		0, 5, 1
-	};
+	//// Make Materials
 
-	// Make Materials
+	//std::shared_ptr <Material> matRed = std::make_shared<Material>(basicPixelShader, basicVertexShader, XMFLOAT4(0.75f, 0,0, 0 ));
+	//std::shared_ptr <Material> matBlue = std::make_shared<Material>(basicPixelShader, basicVertexShader, XMFLOAT4(0, 0, 0.75f, 0));
+	//std::shared_ptr <Material> matGreen = std::make_shared<Material>(basicPixelShader, basicVertexShader, XMFLOAT4(0, 0.75f, 0, 0));
 
-	std::shared_ptr <Material> matRed = std::make_shared<Material>(basicPixelShader, basicVertexShader, XMFLOAT4(0.75f, 0,0, 0 ));
-	std::shared_ptr <Material> matBlue = std::make_shared<Material>(basicPixelShader, basicVertexShader, XMFLOAT4(0, 0, 0.75f, 0));
-	std::shared_ptr <Material> matGreen = std::make_shared<Material>(basicPixelShader, basicVertexShader, XMFLOAT4(0, 0.75f, 0, 0));
-
-	materials.push_back(matRed);
-	materials.push_back(matBlue);
-	materials.push_back(matGreen);
+	//materials.push_back(matRed);
+	//materials.push_back(matBlue);
+	//materials.push_back(matGreen);
 
 
 
 
 
-	triangle = std::make_shared<Mesh>(triVertices, triIndices, 3, 3);
-	square = std::make_shared<Mesh>(squareVertices, squareIndices, 4, 6);
-	weird = std::make_shared<Mesh>(weirdVertices, weirdIndices, 6, 15);
+	//triangle = std::make_shared<Mesh>(triVertices, triIndices, 3, 3);
+	//square = std::make_shared<Mesh>(squareVertices, squareIndices, 4, 6);
+	//weird = std::make_shared<Mesh>(weirdVertices, weirdIndices, 6, 15);
 
-	entities.push_back(Entity(weird, matRed));
-	entities.push_back(Entity(triangle, matBlue));
-	entities.push_back(Entity(square, matGreen));
-	entities.push_back(Entity(weird, matRed));
-	entityPositions.assign(entities.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
-	entityRotations.assign(entities.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
-	entityScales.assign(entities.size(), XMFLOAT3(1.0f, 1.0f, 1.0f));
+	//entities.push_back(Entity(weird, matRed));
+	//entities.push_back(Entity(triangle, matBlue));
+	//entities.push_back(Entity(square, matGreen));
+	//entities.push_back(Entity(weird, matRed));
+	//entityPositions.assign(entities.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
+	//entityRotations.assign(entities.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
+	//entityScales.assign(entities.size(), XMFLOAT3(1.0f, 1.0f, 1.0f));
 
 
 }
