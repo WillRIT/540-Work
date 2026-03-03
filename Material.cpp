@@ -23,5 +23,5 @@ Microsoft::WRL::ComPtr<ID3D11VertexShader> Material::GetVertexShader()
 
 DirectX::XMFLOAT4 Material::GetColorTint()
 {
-	return DirectX::XMFLOAT4();
+	return colorTint;
 }

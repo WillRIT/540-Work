@@ -90,22 +90,17 @@ Game::Game()
 				//  - This describes the layout of data sent to a vertex shader
 				//  - In other words, it describes how to interpret data (numbers) in a vertex buffer
 				//  - Doing this NOW because it requires a vertex shader's byte code to verify against!
-		D3D11_INPUT_ELEMENT_DESC inputElements[3] = {};
+		D3D11_INPUT_ELEMENT_DESC inputElements[2] = {};
 
 		// Set up the first element - a position, which is 3 float values
 		inputElements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;				// Most formats are described as color channels; really it just means "Three 32-bit floats"
 		inputElements[0].SemanticName = "POSITION";							// This is "POSITION" - needs to match the semantics in our vertex shader input!
 		inputElements[0].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// How far into the vertex is this?  Assume it's after the previous element
 
-		// Set up the second element - a color, which is 4 more float values
-		inputElements[1].Format = DXGI_FORMAT_R32G32_FLOAT;					// 2x 32-bit floats
-		inputElements[1].SemanticName = "TEXCOORD";							// Match our vertex shader input!
+		// Set up the second element - a color, which is 4 float values
+		inputElements[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;			// 4x 32-bit floats
+		inputElements[1].SemanticName = "COLOR";							// Match our vertex shader input!
 		inputElements[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// After the previous element
-
-		// Set up the second element - a color, which is 4 more float values
-		inputElements[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;				// 3x 32-bit floats
-		inputElements[2].SemanticName = "NORMAL";							// Match our vertex shader input!
-		inputElements[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// After the previous element
 
 
 		// Create the input layout, verifying our description against actual shader code
@@ -478,6 +473,15 @@ void Game::Draw(float deltaTime, float totalTime)
 			vsData.view = camera->isActive ? camera->GetViewMatrix() : camera2->GetViewMatrix();
 			vsData.projection = camera->isActive ? camera->GetProjectionMatrix() : camera2->GetProjectionMatrix();
 			vsData.colorTint = mat->GetColorTint();
+
+			// Map the constant buffer data to the GPU
+			D3D11_MAPPED_SUBRESOURCE mapped = {};
+			Graphics::Context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+			std::memcpy(mapped.pData, &vsData, sizeof(vsData));
+			Graphics::Context->Unmap(vsConstantBuffer.Get(), 0);
+
+			// Bind the constant buffer to the vertex shader
+			Graphics::Context->VSSetConstantBuffers(0, 1, vsConstantBuffer.GetAddressOf());
 
 			e.Draw();
 

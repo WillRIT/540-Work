@@ -48,6 +48,9 @@ int Mesh::GetVertexCount()
 
 void Mesh::MakeBuffers(Vertex* vertArray, size_t numVerts, unsigned int* indexArray, size_t numIndices)
 {
+	this->indCount = (unsigned int)numIndices;
+	this->vertCount = (unsigned int)numVerts;
+
 	// Create the vertex buffer
 	D3D11_BUFFER_DESC vbd = {};
 	vbd.Usage = D3D11_USAGE_IMMUTABLE;
@@ -74,21 +77,34 @@ void Mesh::MakeBuffers(Vertex* vertArray, size_t numVerts, unsigned int* indexAr
 	
 	Graphics::Device->CreateBuffer(&ibd, &initialIndexData, indexBuffer.GetAddressOf());
 
-	// Save the counts
-	this->indCount = (unsigned int)numIndices;
-	this->vertCount = (unsigned int)numVerts;
 }
 
 void Mesh::Draw()
 {
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-	Graphics::Context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
-	Graphics::Context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-	Graphics::Context->DrawIndexed(
-		GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
-		0,     // Offset to the first index we want to use
-		0);    // Offset to add to each index when looking up vertices
+		// DRAW geometry
+		// - These steps are generally repeated for EACH object you draw
+		// - Other Direct3D calls will also be necessary to do more complex things
+
+		// Set buffers in the input assembler (IA) stage
+		//  - Do this ONCE PER OBJECT, since each object may have different geometry
+		//  - For this demo, this step *could* simply be done once during Init()
+		//  - However, this needs to be done between EACH DrawIndexed() call
+		//     when drawing different geometry, so it's here as an example
+		UINT stride = sizeof(Vertex);
+		UINT offset = 0;
+		Graphics::Context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
+		Graphics::Context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+
+		// Tell Direct3D to draw
+		//  - Begins the rendering pipeline on the GPU
+		//  - Do this ONCE PER OBJECT you intend to draw
+		//  - This will use all currently set Direct3D resources (shaders, buffers, etc)
+		//  - DrawIndexed() uses the currently set INDEX BUFFER to look up corresponding
+		//     vertices in the currently set VERTEX BUFFER
+		Graphics::Context->DrawIndexed(
+			indCount,    // The number of indices to use (we could draw a subset if we wanted)
+			0,			// Offset to the first index we want to use
+			0);			// Offset to add to each index when looking up vertices
 }
 
 Mesh::~Mesh()
