@@ -341,28 +341,6 @@ void Game::Update(float deltaTime, float totalTime)
 			ImGui::Text("FOV: %.2f degrees", camera->fov * (180.0f / XM_PI));
 		}
 
-
-
-		/*
-		ImGui::ColorEdit4("Tint", &vsData.colorTint.x);
-		ImGui::DragFloat3("Offset", &vsData.offset.x, 0.01f, -1.0f, 1.0f);
-		*/
-		/*if (ImGui::CollapsingHeader("Mesh Info"))
-		{
-			ImGui::Text("Triangle Triangle: 1");
-
-			ImGui::Text("Triangle Verts: %d", triangle->GetVertexCount());
-			ImGui::Text("Triangle Indices: %d", triangle->GetIndexCount());
-
-			ImGui::Text("Square Triangles: %d", square->GetIndexCount() / 3);
-			ImGui::Text("Square Verts: %d", square->GetVertexCount());
-			ImGui::Text("Square Indices: %d", square->GetIndexCount());
-			
-			ImGui::Text("Penta Triangles: %d", square->GetIndexCount() / 3);
-			ImGui::Text("Penta Verts: %d", weird->GetVertexCount());
-			ImGui::Text("Penta Indices: %d", weird->GetIndexCount());
-		}*/
-
 		if (ImGui::CollapsingHeader("Entity Transforms"))
 		{
 			for (size_t i = 0; i < entities.size(); i++)
@@ -381,54 +359,29 @@ void Game::Update(float deltaTime, float totalTime)
 				}
 			}
 		}
-
 		ImGui::End();
 	}
 
 	for (size_t i = 0; i < entities.size(); i++)
 	{
-		//XMFLOAT3 position = entityPositions[i];
-		//XMFLOAT3 rotation = entityRotations[i];
-		//XMFLOAT3 scale = entityScales[i];
+		XMFLOAT3 position = entityPositions[i];
+		XMFLOAT3 rotation = entityRotations[i];
+		XMFLOAT3 scale = entityScales[i];
 
-		//if (animateEntities)
-		//{
-		//	float t = totalTime + static_cast<float>(i);
-		//	float radius = 0.2f + 0.1f * static_cast<float>(i);
-		//	position.x += std::cos(t * 0.7f) * radius;
-		//	position.y += std::sin(t * 0.9f) * radius;
-		//	rotation.z += t;
-		//}
-		// Create variables for editing (ImGui needs modifiable data)
-		XMFLOAT3 position = entities[i].GetTransform()->GetPosition();
-		XMFLOAT3 rotation = entities[i].GetTransform()->GetPitchYawRoll();
-		XMFLOAT3 scale = entities[i].GetTransform()->GetScale();
-
-		// Modify Position
-		if (ImGui::DragFloat3(("Position##" + std::to_string(i)).c_str(), &position.x, 0.1f, -1.0f, 1.0f))
+		if (animateEntities)
 		{
-			entities[i].GetTransform()->SetPosition(position);
+			float t = totalTime + static_cast<float>(i);
+			float radius = 0.2f + 0.1f * static_cast<float>(i);
+			position.x += std::cos(t * 0.7f) * radius;
+			position.y += std::sin(t * 0.9f) * radius;
+			rotation.z += t;
 		}
 
-		// Modify Rotation (ImGui uses degrees, so convert from radians)
-		XMFLOAT3 rotationDegrees = { XMConvertToDegrees(rotation.x),
-									 XMConvertToDegrees(rotation.y),
-									 XMConvertToDegrees(rotation.z) };
-
-		if (ImGui::DragFloat3(("Rotation##" + std::to_string(i)).c_str(), &rotationDegrees.x, 1.0f, -360.0f, 360.0f))
-		{
-			entities[i].GetTransform()->SetRotation(XMFLOAT3(XMConvertToRadians(rotationDegrees.x),
-				XMConvertToRadians(rotationDegrees.y),
-				XMConvertToRadians(rotationDegrees.z)));
-		}
-
-		// Modify Scale
-		if (ImGui::DragFloat3(("Scale##" + std::to_string(i)).c_str(), &scale.x, 0.1f, 0.1f, 10.0f))
-		{
-			entities[i].GetTransform()->SetScale(scale);
-		}
+		auto transform = entities[i].GetTransform();
+		transform->SetPosition(position);
+		transform->SetRotation(rotation);
+		transform->SetScale(scale);
 	}
-
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
 		Window::Quit();

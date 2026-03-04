@@ -11,6 +11,7 @@ struct VertexShaderConstants
 
 struct PixelShaderConstants
 {
-	DirectX::XMFLOAT4 colorTint;
-	float time;
+	DirectX::XMFLOAT4 colorTint;  // 16 bytes
+	float time;                    // 4 bytes
+	DirectX::XMFLOAT3 padding;    // 12 bytes padding (total = 32 bytes, multiple of 16)
 };

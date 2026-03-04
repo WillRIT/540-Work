@@ -18,9 +18,9 @@ struct VertexToPixel
 
 cbuffer PixelShaderConstants : register(b0)
 {
-    float4 colorTint; // RGBA color (red, green, blue, alpha)
-    float deltaTime; // Time since last frame
-    float2 resolution; // Screen width
+    float4 colorTint;   // RGBA color tint - 16 bytes
+    float time;         // Time value for animations - 4 bytes
+    float3 padding;     // Padding to make buffer 32 bytes (multiple of 16)
 };
 
 // --------------------------------------------------------
@@ -34,37 +34,32 @@ cbuffer PixelShaderConstants : register(b0)
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-		//inspired by a shader made by The_King_Of_Shader
-	//https://www.shadertoy.com/view/WcXSR2
+    // Cool animated shader effect using UV coordinates and normals
     
-    //speed up shader
-    float time = deltaTime * 4;
+    // Animated waves based on UV and time
+    float wave1 = sin(input.uv.x * 10.0 + time * 2.0) * 0.5 + 0.5;
+    float wave2 = cos(input.uv.y * 10.0 + time * 1.5) * 0.5 + 0.5;
     
-    //create coordinates based on color of pixel, and screen resolution
-    float2 uv = (input.screenPosition.xy - float2(0.5f, 0.5f) * resolution.xy) / resolution.xx;
-    float2 uv2 = (input.screenPosition.xy - float2(0.5f, 0.505f) * resolution.xy) / resolution.xx;
-    float2 uv3 = (input.screenPosition.xy - float2(0.505f, 0.5f) * resolution.xy) / resolution.xx;
+    // Create animated color based on normals
+    float3 animatedNormal = input.normal * 0.5 + 0.5; // Remap from [-1,1] to [0,1]
     
-    //generate circles stemming from uv positions
-    float circle = (length(uv) + (5 * (time - 0.02))) * 40;
-    float circle2 = (length(uv2) + (5 * (time - 0.02))) * 40;
-    float circle3 = (length(uv3) + (5 * (time - 0.02))) * 40;
-
-    //get change in circles over time
-    float changeCircle = (sin(circle) + 1) / 2;
-    float changeCircle2 = (sin(circle2) + 1) / 2;
-    float changeCircle3 = (sin(circle3) + 1) / 2;
+    // Pulsing effect
+    float pulse = sin(time * 3.0) * 0.3 + 0.7;
     
-    //subtract changes from one another and
-    //multiply the changes by an intensity
-    float cy = (changeCircle - changeCircle2) * 10;
-    float cx = (changeCircle - changeCircle3) * 10;
-
-    //compute resulting color
-    float3 result = normalize(cross(float3(1, 0, cy), float3(0, 1, cx)));
-    //apply color tint
-    result *= float3(1, 0, 0);
-    //return result
-    return float4(result, 1);
-	
+    // Combine waves with normals for interesting color variation
+    float3 baseColor = float3(
+        wave1 * animatedNormal.r,
+        wave2 * animatedNormal.g,
+        (wave1 + wave2) * 0.5 * animatedNormal.b
+    ) * pulse;
+    
+    // Apply color tint
+    float3 finalColor = baseColor * colorTint.rgb;
+    
+    // Add some fresnel-like rim lighting effect
+    float3 viewDir = normalize(float3(0, 0, 1)); // Simple approximation
+    float rimIntensity = pow(1.0 - saturate(dot(input.normal, viewDir)), 3.0);
+    finalColor += rimIntensity * float3(1, 1, 1) * 0.3;
+    
+    return float4(finalColor, colorTint.a);
 }
