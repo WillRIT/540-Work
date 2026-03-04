@@ -41,14 +41,21 @@ Game::Game()
 	//  - You'll be expanding and/or replacing these later
 	CreateGeometry();
 
-
+	// Create vertex shader constant buffer
 	D3D11_BUFFER_DESC cbd = {};
 	cbd.Usage = D3D11_USAGE_DYNAMIC;
 	cbd.ByteWidth = sizeof(VertexShaderConstants);
 	cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	Graphics::Device->CreateBuffer(&cbd, 0, vsConstantBuffer.GetAddressOf());
-	
+
+	// Create pixel shader constant buffer
+	D3D11_BUFFER_DESC psCbd = {};
+	psCbd.Usage = D3D11_USAGE_DYNAMIC;
+	psCbd.ByteWidth = sizeof(PixelShaderConstants);
+	psCbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	psCbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	Graphics::Device->CreateBuffer(&psCbd, 0, psConstantBuffer.GetAddressOf());
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -185,90 +192,77 @@ Microsoft::WRL::ComPtr<ID3D11VertexShader> Game::LoadVertexShader(const wchar_t*
 // --------------------------------------------------------
 void Game::CreateGeometry()
 {
-
+	//Load Shaders
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> basicVertexShader = LoadVertexShader(FixPath(L"VertexShader.cso").c_str());
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> basicPixelShader = LoadPixelShader(FixPath(L"PixelShader.cso").c_str());
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> uvPixelShader = LoadPixelShader(FixPath(L"DebugUVsPS.cso").c_str());
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> normalPixelShader = LoadPixelShader(FixPath(L"DebugNormalsPS.cso").c_str());
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> fancyShader = LoadPixelShader(FixPath(L"CustomPS.cso").c_str());
 
+	// Load Models - Convert wide strings to narrow strings using WideToNarrow helper
+	std::shared_ptr<Mesh> cubeMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/cube.obj")).c_str());
+	std::shared_ptr<Mesh> cylinderMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/cylinder.obj")).c_str());
+	std::shared_ptr<Mesh> helixMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/helix.obj")).c_str());
+	std::shared_ptr<Mesh> quadMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/quad.obj")).c_str());
+	std::shared_ptr<Mesh> quadDoubleMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/quad_double_sided.obj")).c_str());
+	std::shared_ptr<Mesh> sphereMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/sphere.obj")).c_str());
+	std::shared_ptr<Mesh> torusMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/torus.obj")).c_str());
 
-	//// Set up the vertices of the triangle we would like to draw
-	//// - We're going to copy this array, exactly as it exists in CPU memory
-	////    over to a Direct3D-controlled data structure on the GPU (the vertex buffer)
-	//// - Note: Since we don't have a camera or really any concept of
-	////    a "3d world" yet, we're simply describing positions within the
-	////    bounds of how the rasterizer sees our screen: [-1 to +1] on X and Y
-	//// - This means (0,0) is at the very center of the screen.
-	//// - These are known as "Normalized Device Coordinates" or "Homogeneous 
-	////    Screen Coords", which are ways to describe a position without
-	////    knowing the exact size (in pixels) of the image/window/etc.  
-	//// - Long story short: Resizing the window also resizes the triangle,
-	////    since we're describing the triangle in terms of the window itself
-	//Vertex triVertices[] =
-	//{
-	//	{ XMFLOAT3(+0.0f, +0.5f, +0.0f), XMFLOAT2(0.5f, 0.0f), XMFLOAT3(0, 0, -1) },
-	//	{ XMFLOAT3(+0.5f, -0.5f, +0.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT3(0, 0, -1) },
-	//	{ XMFLOAT3(-0.5f, -0.5f, +0.0f), XMFLOAT2(0.0f, 1.0f), XMFLOAT3(0, 0, -1) },
+	meshes.push_back(cubeMesh);
+	meshes.push_back(cylinderMesh);
+	meshes.push_back(helixMesh);
+	meshes.push_back(quadMesh);
+	meshes.push_back(quadDoubleMesh);
+	meshes.push_back(sphereMesh);
+	meshes.push_back(torusMesh);
 
-	//};
-	//Vertex squareVertices[] =
-	//{
-	//	{ XMFLOAT3(+0.7f, +0.7f, +0.0f), XMFLOAT2(1.0f, 0.0f), XMFLOAT3(0, 0, -1) },
-	//	{ XMFLOAT3(+0.7f, +0.5f, +0.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT3(0, 0, -1) },
-	//	{ XMFLOAT3(+0.5f, +0.5f, +0.0f), XMFLOAT2(0.0f, 1.0f), XMFLOAT3(0, 0, -1) },
-	//	{ XMFLOAT3(+0.5f, +0.7f, +0.0f), XMFLOAT2(0.0f, 0.0f), XMFLOAT3(0, 0, -1) },
-	//};
+	// Create Materials
 
-	//Vertex weirdVertices[] =
-	//{
-	//	{ XMFLOAT3(0.0f, 0.0f, 0.0f),    XMFLOAT2(0.5f, 0.5f), XMFLOAT3(0, 0, -1) },	// Center
-	//	{ XMFLOAT3(0.0f, 0.8f, 0.0f),     XMFLOAT2(0.5f, 0.0f), XMFLOAT3(0, 0, -1) },	// Top
-	//	{ XMFLOAT3(0.76f, 0.25f, 0.0f),   XMFLOAT2(1.0f, 0.25f), XMFLOAT3(0, 0, -1) },	// Top-right
-	//	{ XMFLOAT3(0.47f, -0.65f, 0.0f),  XMFLOAT2(0.85f, 0.9f), XMFLOAT3(0, 0, -1) },	// Bottom-right
-	//	{ XMFLOAT3(-0.47f, -0.65f, 0.0f), XMFLOAT2(0.15f, 0.9f), XMFLOAT3(0, 0, -1) },	// Bottom-left
-	//	{ XMFLOAT3(-0.76f, 0.25f, 0.0f),  XMFLOAT2(0.0f, 0.25f), XMFLOAT3(0, 0, -1) },	// Top-left
-	//};
-
-	//// Set up indices, which tell us which vertices to use and in which order
-	//// - This is redundant for just 3 vertices, but will be more useful later
-	//// - Indices are technically not required if the vertices are in the buffer 
-	////    in the correct order and each one will be used exactly once
-	//// - But just to see how it's done...
-	//unsigned int triIndices[] = { 0, 1, 2 };
-	//unsigned int squareIndices[] = { 0, 1, 2, 0, 2, 3 };
-	//unsigned int weirdIndices[] = {
-	//0, 1, 2,
-	//	0, 2, 3,
-	//	0, 3, 4,
-	//	0, 4, 5,
-	//	0, 5, 1
-	//};
-
-	//// Make Materials
-
-	//std::shared_ptr <Material> matRed = std::make_shared<Material>(basicPixelShader, basicVertexShader, XMFLOAT4(0.75f, 0,0, 0 ));
-	//std::shared_ptr <Material> matBlue = std::make_shared<Material>(basicPixelShader, basicVertexShader, XMFLOAT4(0, 0, 0.75f, 0));
-	//std::shared_ptr <Material> matGreen = std::make_shared<Material>(basicPixelShader, basicVertexShader, XMFLOAT4(0, 0.75f, 0, 0));
-
-	//materials.push_back(matRed);
-	//materials.push_back(matBlue);
-	//materials.push_back(matGreen);
+	std::shared_ptr<Material> redMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f));
+	std::shared_ptr<Material> greenMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(0.5f, 1.0f, 0.5f, 1.0f));
+	std::shared_ptr<Material> blueMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(0.5f, 0.5f, 1.0f, 1.0f));
+	std::shared_ptr<Material> uvMat = std::make_shared<Material>(uvPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+	std::shared_ptr<Material> normalMat = std::make_shared<Material>(normalPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+	std::shared_ptr<Material> fancyMat = std::make_shared<Material>(fancyShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
 
 
+	materials.push_back(redMat);
+	materials.push_back(greenMat);
+	materials.push_back(blueMat);
+	materials.push_back(uvMat);
+	materials.push_back(normalMat);
+	materials.push_back(fancyMat);
+
+	// Create Entities
+
+	entities.push_back(Entity(meshes[0], redMat));        // 0: cube
+	entities.push_back(Entity(meshes[1], greenMat));      // 1: cylinder
+	
+	entities.push_back(Entity(meshes[2], uvMat));         // 2: helix
+	entities.push_back(Entity(meshes[5], uvMat));         // 3: sphere
+
+	entities.push_back(Entity(meshes[1], normalMat));     // 1: cube
+	entities.push_back(Entity(meshes[0], normalMat));     // 0: 
+
+	entities.push_back(Entity(meshes[4], fancyMat));      // 6: quad_double
+	entities.push_back(Entity(meshes[6], fancyMat));      // 7: torus
 
 
-	//triangle = std::make_shared<Mesh>(triVertices, triIndices, 3, 3);
-	//square = std::make_shared<Mesh>(squareVertices, squareIndices, 4, 6);
-	//weird = std::make_shared<Mesh>(weirdVertices, weirdIndices, 6, 15);
-
-	//entities.push_back(Entity(weird, matRed));
-	//entities.push_back(Entity(triangle, matBlue));
-	//entities.push_back(Entity(square, matGreen));
-	//entities.push_back(Entity(weird, matRed));
-	//entityPositions.assign(entities.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
-	//entityRotations.assign(entities.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
-	//entityScales.assign(entities.size(), XMFLOAT3(1.0f, 1.0f, 1.0f));
+	entities[0].GetTransform()->MoveAbsolute(-9, 4, 0);
+	entities[1].GetTransform()->MoveAbsolute(-6, 5, 0);
+	entities[2].GetTransform()->MoveAbsolute(-3, -4, 0);
+	entities[3].GetTransform()->MoveAbsolute(0, -5, 0);
+	entities[4].GetTransform()->MoveAbsolute(3, 0, 0);
+	entities[5].GetTransform()->MoveAbsolute(6, 0, 0);
+	entities[6].GetTransform()->MoveAbsolute(9, -7, 0);
+	entities[7].GetTransform()->MoveAbsolute(12, 0, 0);
 
 
+	// Initialize transform vectors to match entity count
+	entityPositions.assign(entities.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
+	entityRotations.assign(entities.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
+	entityScales.assign(entities.size(), XMFLOAT3(1.0f, 1.0f, 1.0f));
 }
 
 
@@ -353,7 +347,7 @@ void Game::Update(float deltaTime, float totalTime)
 		ImGui::ColorEdit4("Tint", &vsData.colorTint.x);
 		ImGui::DragFloat3("Offset", &vsData.offset.x, 0.01f, -1.0f, 1.0f);
 		*/
-		if (ImGui::CollapsingHeader("Mesh Info"))
+		/*if (ImGui::CollapsingHeader("Mesh Info"))
 		{
 			ImGui::Text("Triangle Triangle: 1");
 
@@ -367,7 +361,7 @@ void Game::Update(float deltaTime, float totalTime)
 			ImGui::Text("Penta Triangles: %d", square->GetIndexCount() / 3);
 			ImGui::Text("Penta Verts: %d", weird->GetVertexCount());
 			ImGui::Text("Penta Indices: %d", weird->GetIndexCount());
-		}
+		}*/
 
 		if (ImGui::CollapsingHeader("Entity Transforms"))
 		{
@@ -393,23 +387,46 @@ void Game::Update(float deltaTime, float totalTime)
 
 	for (size_t i = 0; i < entities.size(); i++)
 	{
-		XMFLOAT3 position = entityPositions[i];
-		XMFLOAT3 rotation = entityRotations[i];
-		XMFLOAT3 scale = entityScales[i];
+		//XMFLOAT3 position = entityPositions[i];
+		//XMFLOAT3 rotation = entityRotations[i];
+		//XMFLOAT3 scale = entityScales[i];
 
-		if (animateEntities)
+		//if (animateEntities)
+		//{
+		//	float t = totalTime + static_cast<float>(i);
+		//	float radius = 0.2f + 0.1f * static_cast<float>(i);
+		//	position.x += std::cos(t * 0.7f) * radius;
+		//	position.y += std::sin(t * 0.9f) * radius;
+		//	rotation.z += t;
+		//}
+		// Create variables for editing (ImGui needs modifiable data)
+		XMFLOAT3 position = entities[i].GetTransform()->GetPosition();
+		XMFLOAT3 rotation = entities[i].GetTransform()->GetPitchYawRoll();
+		XMFLOAT3 scale = entities[i].GetTransform()->GetScale();
+
+		// Modify Position
+		if (ImGui::DragFloat3(("Position##" + std::to_string(i)).c_str(), &position.x, 0.1f, -1.0f, 1.0f))
 		{
-			float t = totalTime + static_cast<float>(i);
-			float radius = 0.2f + 0.1f * static_cast<float>(i);
-			position.x += std::cos(t * 0.7f) * radius;
-			position.y += std::sin(t * 0.9f) * radius;
-			rotation.z += t;
+			entities[i].GetTransform()->SetPosition(position);
 		}
 
-		auto transform = entities[i].GetTransform();
-		transform->SetPosition(position);
-		transform->SetRotation(rotation);
-		transform->SetScale(scale);
+		// Modify Rotation (ImGui uses degrees, so convert from radians)
+		XMFLOAT3 rotationDegrees = { XMConvertToDegrees(rotation.x),
+									 XMConvertToDegrees(rotation.y),
+									 XMConvertToDegrees(rotation.z) };
+
+		if (ImGui::DragFloat3(("Rotation##" + std::to_string(i)).c_str(), &rotationDegrees.x, 1.0f, -360.0f, 360.0f))
+		{
+			entities[i].GetTransform()->SetRotation(XMFLOAT3(XMConvertToRadians(rotationDegrees.x),
+				XMConvertToRadians(rotationDegrees.y),
+				XMConvertToRadians(rotationDegrees.z)));
+		}
+
+		// Modify Scale
+		if (ImGui::DragFloat3(("Scale##" + std::to_string(i)).c_str(), &scale.x, 0.1f, 0.1f, 10.0f))
+		{
+			entities[i].GetTransform()->SetScale(scale);
+		}
 	}
 
 	// Example input checking: Quit if the escape key is pressed
@@ -432,26 +449,14 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	{
-		//for (int i = 0; i < entities.size(); i++)
-		//
-		//{
-		//	// Use active camera for rendering
-		//	Camera* activeCam = camera->isActive ? camera.get() : camera2.get();
-		//	VertexShaderConstants vsData = { DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), entities[i].GetTransform()->GetWorldMatrix(), activeCam->GetViewMatrix(), activeCam->GetProjectionMatrix()};
-		//	D3D11_MAPPED_SUBRESOURCE mapped = {};
-		//	Graphics::Context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-		//	std::memcpy(mapped.pData, &vsData, sizeof(vsData));
-		//	Graphics::Context->Unmap(vsConstantBuffer.Get(), 0);
-		//	entities[i].Draw();
-		//}
-	}
-	// ID3D11DeviceContext::DrawIndexed: The Vertex Shader expects application provided input data (which is to say data other than hardware auto-generated values such as VertexID or InstanceID). Therefore an Input Assembler object is expected, but none is bound.
-
 	// DRAW geometry
 	// - These steps are generally repeated for EACH object you draw
 	// - Other Direct3D calls will also be necessary to do more complex things
 	{
+		 // Re-bind input layout and topology (ImGui may have changed these)
+		Graphics::Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Graphics::Context->IASetInputLayout(inputLayout.Get());
+
 		// Set buffers in the input assembler (IA) stage
 		//  - Do this ONCE PER OBJECT, since each object may have different geometry
 		//  - For this demo, this step *could* simply be done once during Init()
@@ -459,31 +464,28 @@ void Game::Draw(float deltaTime, float totalTime)
 		//     when drawing different geometry, so it's here as an example
 		for (auto& e: entities)
 		{
-			// get the mat
-
+			// Grab the material
 			std::shared_ptr<Material> mat = e.GetMaterial();
 
-			// Make our pipeline
+			// Set up the pipeline for this draw
 			Graphics::Context->VSSetShader(mat->GetVertexShader().Get(), 0, 0);
 			Graphics::Context->PSSetShader(mat->GetPixelShader().Get(), 0, 0);
 
-			VertexShaderConstants vsData = {};
+			// Set vertex shader data
+			VertexShaderConstants vsData{};
 			vsData.world = e.GetTransform()->GetWorldMatrix();
-			vsData.view = camera->isActive ? camera->GetViewMatrix() : camera2->GetViewMatrix();
-			vsData.projection = camera->isActive ? camera->GetProjectionMatrix() : camera2->GetProjectionMatrix();
-			vsData.colorTint = mat->GetColorTint();
+			vsData.view = camera->GetViewMatrix();
+			vsData.projection = camera->GetProjectionMatrix();
+			Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(VertexShaderConstants), D3D11_VERTEX_SHADER, 0);
 
-			// Map the constant buffer data to the GPU
-			D3D11_MAPPED_SUBRESOURCE mapped = {};
-			Graphics::Context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-			std::memcpy(mapped.pData, &vsData, sizeof(vsData));
-			Graphics::Context->Unmap(vsConstantBuffer.Get(), 0);
+			// Set pixel shader data
+			PixelShaderConstants psData{};
+			psData.colorTint = mat->GetColorTint();
+			psData.time = totalTime;
+			Graphics::FillAndBindNextConstantBuffer(&psData, sizeof(PixelShaderConstants), D3D11_PIXEL_SHADER, 0);
 
-			// Bind the constant buffer to the vertex shader
-			Graphics::Context->VSSetConstantBuffers(0, 1, vsConstantBuffer.GetAddressOf());
-
+			// Draw one entity
 			e.Draw();
-
 		}
 	}
 

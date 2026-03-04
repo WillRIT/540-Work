@@ -1,6 +1,8 @@
 #include "Graphics.h"
 #include <dxgi1_6.h>
 
+#pragma comment(lib, "d3dcompiler.lib")
+#include <d3dcompiler.h>
 // Tell the drivers to use high-performance GPU in multi-GPU systems (like laptops)
 extern "C"
 {
@@ -18,6 +20,11 @@ namespace Graphics
 		bool supportsTearing = false;
 		bool vsyncDesired = false;
 		BOOL isFullscreen = false;
+
+		// Constant buffer stuff
+		unsigned int cbHeapSizeInBytes = 0;
+		unsigned int cbHeapOffsetInBytes = 0;
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext1> context1;
 
 		D3D_FEATURE_LEVEL featureLevel{};
 
@@ -145,6 +152,29 @@ HRESULT Graphics::Initialize(unsigned int windowWidth, unsigned int windowHeight
 		return hr;
 	}
 
+	// Get the ID3D11DeviceContext1 interface from the context for advanced constant buffer functions
+	Context->QueryInterface(IID_PPV_ARGS(context1.GetAddressOf()));
+
+	// Create the constant buffer heap
+	// Size should be large enough for multiple frames' worth of constant data
+	// Using 16 MB as a reasonable size
+	cbHeapSizeInBytes = 1024 * 1024 * 16; // 16 MB
+	cbHeapOffsetInBytes = 0;
+
+	D3D11_BUFFER_DESC cbHeapDesc = {};
+	cbHeapDesc.ByteWidth = cbHeapSizeInBytes;
+	cbHeapDesc.Usage = D3D11_USAGE_DYNAMIC;
+	cbHeapDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbHeapDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	cbHeapDesc.MiscFlags = 0;
+	cbHeapDesc.StructureByteStride = 0;
+
+	hr = Device->CreateBuffer(&cbHeapDesc, nullptr, ConstantBufferHeap.GetAddressOf());
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
 	// We're set up
 	apiInitialized = true;
 
@@ -177,6 +207,68 @@ void Graphics::ShutDown()
 {
 }
 
+// --------------------------------------------------------
+// Fills a portion of the big constant buffer with the provided data, then binds that portion to the pipeline.
+// Most of this is from Professor Cascioli's Readings
+void Graphics::FillAndBindNextConstantBuffer(
+	void* data,
+	unsigned int dataSizeInBytes,
+	D3D11_SHADER_TYPE shaderType,
+	unsigned int registerSlot)
+{
+	// How much space will we actually need?  Each chunk must be
+	// a multiple of 256 bytes.  Performating a basic alignment here.
+	unsigned int reservationSize = (dataSizeInBytes + 255) / 256 * 256;
+
+	// Loop back to the beginning of the buffer if we don't have enough room for this reservation at the end
+	if (cbHeapOffsetInBytes + reservationSize >= cbHeapSizeInBytes)
+		cbHeapOffsetInBytes = 0;
+
+	// Mapping the Buffer
+	D3D11_MAPPED_SUBRESOURCE map{};
+	Context->Map(
+		ConstantBufferHeap.Get(),
+		0,
+		D3D11_MAP_WRITE_NO_OVERWRITE, // Must ensure we're not touching memory currently in use!!!
+		0,
+		&map);
+
+	// Manage the memory - copy the data to the right offset within the buffer
+	void* uploadAddress = reinterpret_cast<void*>((UINT64)map.pData + cbHeapOffsetInBytes);
+	memcpy(uploadAddress, data, dataSizeInBytes);
+
+	// Unmap to release this portion of the buffer
+	Context->Unmap(ConstantBufferHeap.Get(), 0);
+
+	// Calculate the offset and size as measured in 16-byte constants
+	unsigned int firstConstant = cbHeapOffsetInBytes / 16;
+	unsigned int numConstants = reservationSize / 16;
+
+	// Bind the buffer to the proper pipeline stage
+	switch (shaderType)
+	{
+	case D3D11_VERTEX_SHADER:
+		context1->VSSetConstantBuffers1(
+			registerSlot,
+			1,
+			ConstantBufferHeap.GetAddressOf(),
+			&firstConstant,
+			&numConstants);
+		break;
+
+	case D3D11_PIXEL_SHADER:
+		context1->PSSetConstantBuffers1(
+			registerSlot,
+			1,
+			ConstantBufferHeap.GetAddressOf(),
+			&firstConstant,
+			&numConstants);
+		break;
+	}
+
+	// Offset for the next call
+	cbHeapOffsetInBytes += reservationSize;
+}
 
 // --------------------------------------------------------
 // When the window is resized, the underlying 

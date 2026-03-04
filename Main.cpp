@@ -1,4 +1,3 @@
-
 #include <Windows.h>
 #include <crtdbg.h>
 
@@ -82,6 +81,7 @@ int WINAPI WinMain(
 
 	// Now the main application object itself can be initialzied
 	game = new Game();
+
 
 	// Time tracking
 	LARGE_INTEGER perfFreq{};

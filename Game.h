@@ -36,11 +36,10 @@ public:
 
 	std::vector<Camera> cameras;
 	std::vector<Entity> entities;
+	std::vector<std::shared_ptr<Mesh>> meshes;
 	std::vector<std::shared_ptr<Material>> materials;
 
-	std::shared_ptr<Mesh> weird;
-	std::shared_ptr<Mesh> triangle;
-	std::shared_ptr<Mesh> square;
+	
 
 
 private:
@@ -60,6 +59,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
+	// Constant buffers
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;  // Vertex shader constant buffer
+	Microsoft::WRL::ComPtr<ID3D11Buffer> psConstantBuffer;  // Pixel shader constant buffer
 };
 

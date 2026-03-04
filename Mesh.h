@@ -28,6 +28,6 @@ public:
 
 	~Mesh();
 	Mesh(Vertex vertices[], unsigned int indices[], int verts, int inds);
-
+	Mesh(const char* fileName);
 };
 

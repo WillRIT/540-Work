@@ -4,6 +4,7 @@
 #include <d3d11_1.h>
 #include <string>
 #include <wrl/client.h>
+#include <d3d11shadertracing.h>
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -24,6 +25,10 @@ namespace Graphics
 	// Debug Layer
 	inline Microsoft::WRL::ComPtr<ID3D11InfoQueue> InfoQueue;
 
+	// Big awesome Buffer
+	inline Microsoft::WRL::ComPtr<ID3D11Buffer> ConstantBufferHeap;
+
+
 	// --- FUNCTIONS ---
 
 	// Getters
@@ -34,6 +39,7 @@ namespace Graphics
 	HRESULT Initialize(unsigned int windowWidth, unsigned int windowHeight, HWND windowHandle, bool vsyncIfPossible);
 	void ShutDown();
 	void ResizeBuffers(unsigned int width, unsigned int height);
+	void FillAndBindNextConstantBuffer(void* data, unsigned int dataSizeInBytes, D3D11_SHADER_TYPE shaderType, unsigned int slot);
 
 	// Debug Layer
 	void PrintDebugMessages();
