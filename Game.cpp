@@ -10,6 +10,7 @@
 #include "Camera.h"
 #include "Material.h"
 
+#include <WICTextureLoader.h>
 #include <DirectXMath.h>
 #include <memory>
 #include <cstring>
