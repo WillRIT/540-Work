@@ -193,6 +193,17 @@ Microsoft::WRL::ComPtr<ID3D11VertexShader> Game::LoadVertexShader(const wchar_t*
 // --------------------------------------------------------
 void Game::CreateGeometry()
 {
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
+	D3D11_SAMPLER_DESC sampDesc = {};
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP; 
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;		
+	sampDesc.MaxAnisotropy = 16;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	Graphics::Device->CreateSamplerState(&sampDesc, sampler.GetAddressOf());
+
+
 	//Load Shaders
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> basicVertexShader = LoadVertexShader(FixPath(L"VertexShader.cso").c_str());
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> basicPixelShader = LoadPixelShader(FixPath(L"PixelShader.cso").c_str());
@@ -209,6 +220,16 @@ void Game::CreateGeometry()
 	std::shared_ptr<Mesh> sphereMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/sphere.obj")).c_str());
 	std::shared_ptr<Mesh> torusMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/torus.obj")).c_str());
 
+	// Load Textures
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brickSRV;
+
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/wood_diff.png").c_str(), nullptr, woodSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/brick_diff.png").c_str(), nullptr, brickSRV.GetAddressOf());
+
+
+
 	meshes.push_back(cubeMesh);
 	meshes.push_back(cylinderMesh);
 	meshes.push_back(helixMesh);
@@ -218,14 +239,32 @@ void Game::CreateGeometry()
 	meshes.push_back(torusMesh);
 
 	// Create Materials
+	DirectX::XMFLOAT2 defaultScale(1.0f, 1.0f);
+	DirectX::XMFLOAT2 defaultOffset(0.0f, 0.0f);
 
-	std::shared_ptr<Material> redMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f));
-	std::shared_ptr<Material> greenMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(0.5f, 1.0f, 0.5f, 1.0f));
-	std::shared_ptr<Material> blueMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(0.5f, 0.5f, 1.0f, 1.0f));
-	std::shared_ptr<Material> uvMat = std::make_shared<Material>(uvPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-	std::shared_ptr<Material> normalMat = std::make_shared<Material>(normalPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-	std::shared_ptr<Material> fancyMat = std::make_shared<Material>(fancyShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+	DirectX::XMFLOAT2 uvScale1(2.0f, 2.0f);
+	DirectX::XMFLOAT2 uvOffset1(3.0f, 0.0f);
 
+
+	std::shared_ptr<Material> greenMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(0.5f, 1.0f, 0.5f, 1.0f), uvScale1, uvOffset1);
+
+	greenMat->AddSampler(0, sampler);
+	greenMat->AddTexture(0, woodSRV);
+	
+	std::shared_ptr<Material> redMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), defaultScale, defaultOffset);
+
+	redMat->AddSampler(0, sampler);
+	redMat->AddTexture(0, brickSRV);
+
+	std::shared_ptr<Material> blueMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(0.5f, 0.5f, 1.0f, 1.0f), defaultScale, defaultOffset);
+
+	blueMat->AddSampler(0, sampler);
+	blueMat->AddTexture(0, brickSRV);
+
+
+	std::shared_ptr<Material> uvMat = std::make_shared<Material>(uvPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), defaultScale, defaultOffset);
+	std::shared_ptr<Material> normalMat = std::make_shared<Material>(normalPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), defaultScale, defaultOffset);
+	std::shared_ptr<Material> fancyMat = std::make_shared<Material>(fancyShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), defaultScale, defaultOffset);
 
 
 	materials.push_back(redMat);
@@ -235,12 +274,14 @@ void Game::CreateGeometry()
 	materials.push_back(normalMat);
 	materials.push_back(fancyMat);
 
+
+
 	// Create Entities
 
-	entities.push_back(Entity(meshes[0], redMat));        // 0: cube
+	entities.push_back(Entity(meshes[0], blueMat));        // 0: cube
 	entities.push_back(Entity(meshes[1], greenMat));      // 1: cylinder
 	
-	entities.push_back(Entity(meshes[2], uvMat));         // 2: helix
+	entities.push_back(Entity(meshes[2], redMat));         // 2: helix
 	entities.push_back(Entity(meshes[5], uvMat));         // 3: sphere
 
 	entities.push_back(Entity(meshes[1], normalMat));     // 1: cube
@@ -250,20 +291,28 @@ void Game::CreateGeometry()
 	entities.push_back(Entity(meshes[6], fancyMat));      // 7: torus
 
 
-	entities[0].GetTransform()->MoveAbsolute(-9, 4, 0);
-	entities[1].GetTransform()->MoveAbsolute(-6, 5, 0);
-	entities[2].GetTransform()->MoveAbsolute(-3, -4, 0);
-	entities[3].GetTransform()->MoveAbsolute(0, -5, 0);
+	entities[0].GetTransform()->MoveAbsolute(-9, 0, 0);
+	entities[1].GetTransform()->MoveAbsolute(-6, 0, 0);
+	entities[2].GetTransform()->MoveAbsolute(-3, 0, 0);
+	entities[3].GetTransform()->MoveAbsolute(0, 5, 0);
 	entities[4].GetTransform()->MoveAbsolute(3, 0, 0);
 	entities[5].GetTransform()->MoveAbsolute(6, 0, 0);
-	entities[6].GetTransform()->MoveAbsolute(9, -7, 0);
+	entities[6].GetTransform()->MoveAbsolute(9, 7, 0);
 	entities[7].GetTransform()->MoveAbsolute(12, 0, 0);
 
 
 	// Initialize transform vectors to match entity count
-	entityPositions.assign(entities.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
-	entityRotations.assign(entities.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
-	entityScales.assign(entities.size(), XMFLOAT3(1.0f, 1.0f, 1.0f));
+	entityPositions.resize(entities.size());
+	entityRotations.resize(entities.size());
+	entityScales.resize(entities.size());
+	for (size_t i = 0; i < entities.size(); ++i)
+	{
+		// Seed the editable UI arrays with the current transform values so Update() doesn't overwrite them
+		auto t = entities[i].GetTransform();
+		entityPositions[i] = t->GetPosition();
+		entityRotations[i] = t->GetPitchYawRoll();
+		entityScales[i] = t->GetScale();
+	}
 }
 
 
@@ -420,6 +469,8 @@ void Game::Draw(float deltaTime, float totalTime)
 		{
 			// Grab the material
 			std::shared_ptr<Material> mat = e.GetMaterial();
+			mat->BindTexturesAndSamplers();
+
 
 			// Set up the pipeline for this draw
 			Graphics::Context->VSSetShader(mat->GetVertexShader().Get(), 0, 0);
@@ -435,6 +486,8 @@ void Game::Draw(float deltaTime, float totalTime)
 			// Set pixel shader data
 			PixelShaderConstants psData{};
 			psData.colorTint = mat->GetColorTint();
+			psData.uvOffset = mat->GetUVOffset();
+			psData.uvScale = mat->GetUVScale();
 			psData.time = totalTime;
 			Graphics::FillAndBindNextConstantBuffer(&psData, sizeof(PixelShaderConstants), D3D11_PIXEL_SHADER, 0);
 

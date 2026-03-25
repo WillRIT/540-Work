@@ -1,14 +1,17 @@
 #include "Material.h"
+#include "Graphics.h"
 
 
 Material::Material(
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> ps,
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vs,
-	DirectX::XMFLOAT4 colorTint)
+	DirectX::XMFLOAT4 colorTint, DirectX::XMFLOAT2 uvScale, DirectX::XMFLOAT2 uvOffset)
 {
 	this->ps = ps;
 	this->vs = vs;
 	this->colorTint = colorTint;
+	this->uvScale = uvScale;
+	this->uvOffset = uvOffset;
 }
 
 Microsoft::WRL::ComPtr<ID3D11PixelShader> Material::GetPixelShader()
@@ -21,7 +24,82 @@ Microsoft::WRL::ComPtr<ID3D11VertexShader> Material::GetVertexShader()
 	return vs;
 }
 
+
+
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Material::GetTexture(unsigned int index)
+{
+	// Search for the key
+	auto it = textureSRVs.find(index);
+
+	// Not found, return null
+	if (it == textureSRVs.end())
+		return 0;
+
+	// Return the texture ComPtr
+	return it->second;
+}
+
+Microsoft::WRL::ComPtr<ID3D11SamplerState> Material::GetSampler(unsigned int index)
+{
+	// Search for the key
+	auto it = samplers.find(index);
+
+	// Not found, return null
+	if (it == samplers.end())
+		return 0;
+
+	// Return the sampler ComPtr
+	return it->second;
+}
+
+std::unordered_map<unsigned int, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>>& Material::GetTextureMap()
+{
+	return textureSRVs;
+}
+
+std::unordered_map<unsigned int, Microsoft::WRL::ComPtr<ID3D11SamplerState>>& Material::GetSamplerMap()
+{
+	return samplers;
+}
+
 DirectX::XMFLOAT4 Material::GetColorTint()
 {
 	return colorTint;
+}
+
+DirectX::XMFLOAT2 Material::GetUVScale() 
+{
+	return uvScale; 
+}
+
+DirectX::XMFLOAT2 Material::GetUVOffset() 
+{ 
+	return uvOffset; 
+}
+
+void Material::AddSampler(unsigned int index, Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler)
+{
+	samplers.insert({ index, sampler });	
+}
+
+void Material::AddTexture(unsigned int index, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv)
+{
+	textureSRVs.insert({ index, srv });
+}
+
+void Material::RemoveSampler(unsigned int index)
+{
+	samplers.erase(index);
+}
+
+void Material::RemoveTexture(unsigned int index)
+{
+	textureSRVs.erase(index);
+
+}
+
+void Material::BindTexturesAndSamplers()
+{
+	for (auto& t : textureSRVs) { Graphics::Context->PSSetShaderResources(t.first, 1, t.second.GetAddressOf()); }
+	for (auto& s : samplers) { Graphics::Context->PSSetSamplers(s.first, 1, s.second.GetAddressOf()); }
 }

@@ -14,11 +14,17 @@ struct VertexToPixel
 	float4 screenPosition	: SV_POSITION;
 	float2 uv : TEXCOORD;
 		float3 normal : NORMAL;
+  
 };
+
+Texture2D SurfaceTexture : register(t0); // "t" registers for textures
+SamplerState BasicSampler : register(s0); // "s" registers for samplers
 
 cbuffer PixelShaderConstants : register(b0)
 {
 	float4 colorTint; // RGBA color (red, green, blue, alpha)
+    float2 uvScale;
+    float2 uvOffset;
 };
 
 // --------------------------------------------------------
@@ -32,10 +38,10 @@ cbuffer PixelShaderConstants : register(b0)
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	// Just return the input color
-	// - This color (like most values passing through the rasterizer) is 
-	//   interpolated for each pixel between the corresponding vertices 
-	//   of the triangle we're rendering
-	return colorTint;
+    input.uv = input.uv * uvScale + uvOffset;
+
+    float4 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv);
+    surfaceColor *= colorTint;
 	
+	return surfaceColor;
 }
