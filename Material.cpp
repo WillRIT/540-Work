@@ -77,6 +77,21 @@ DirectX::XMFLOAT2 Material::GetUVOffset()
 	return uvOffset; 
 }
 
+void Material::SetUVScale(const DirectX::XMFLOAT2& scale)
+{
+	uvScale = scale;
+}
+
+void Material::SetUVOffset(const DirectX::XMFLOAT2& offset)
+{
+	uvOffset = offset;
+}
+
+void Material::SetColorTint(const DirectX::XMFLOAT4& tint)
+{
+	colorTint = tint;
+}
+
 void Material::AddSampler(unsigned int index, Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler)
 {
 	samplers.insert({ index, sampler });	

@@ -244,6 +244,7 @@ void Game::CreateGeometry()
 
 	DirectX::XMFLOAT2 uvScale1(2.0f, 2.0f);
 	DirectX::XMFLOAT2 uvOffset1(3.0f, 0.0f);
+	DirectX::XMFLOAT2 uvScaleRepeat(5.0f, 5.0f);
 
 
 	std::shared_ptr<Material> greenMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(0.5f, 1.0f, 0.5f, 1.0f), uvScale1, uvOffset1);
@@ -264,7 +265,11 @@ void Game::CreateGeometry()
 
 	std::shared_ptr<Material> uvMat = std::make_shared<Material>(uvPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), defaultScale, defaultOffset);
 	std::shared_ptr<Material> normalMat = std::make_shared<Material>(normalPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), defaultScale, defaultOffset);
-	std::shared_ptr<Material> fancyMat = std::make_shared<Material>(fancyShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), defaultScale, defaultOffset);
+	std::shared_ptr<Material> fancyMat = std::make_shared<Material>(fancyShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), uvScaleRepeat, defaultOffset);
+
+	fancyMat->AddSampler(0, sampler);
+	fancyMat->AddTexture(0, woodSRV);
+	fancyMat->AddTexture(1, brickSRV);
 
 
 	materials.push_back(redMat);
@@ -284,10 +289,10 @@ void Game::CreateGeometry()
 	entities.push_back(Entity(meshes[2], redMat));         // 2: helix
 	entities.push_back(Entity(meshes[5], uvMat));         // 3: sphere
 
-	entities.push_back(Entity(meshes[1], normalMat));     // 1: cube
-	entities.push_back(Entity(meshes[0], normalMat));     // 0: 
+	entities.push_back(Entity(meshes[1], normalMat));     // 4: cylinder
+	entities.push_back(Entity(meshes[0], normalMat));     // 5: cube
 
-	entities.push_back(Entity(meshes[4], fancyMat));      // 6: quad_double
+	entities.push_back(Entity(meshes[0], fancyMat));      // 6: quad_double
 	entities.push_back(Entity(meshes[6], fancyMat));      // 7: torus
 
 
@@ -405,6 +410,51 @@ void Game::Update(float deltaTime, float totalTime)
 					ImGui::PopID();
 
 
+					ImGui::TreePop();
+				}
+			}
+		}
+
+		if (ImGui::CollapsingHeader("Materials"))
+		{
+			for (size_t i = 0; i < materials.size(); i++)
+			{
+				std::string label = "Material " + std::to_string(i);
+				if (ImGui::TreeNode(label.c_str()))
+				{
+					ImGui::PushID(static_cast<int>(i));
+					auto& mat = materials[i];
+
+					auto tint = mat->GetColorTint();
+					float tintValues[4] = { tint.x, tint.y, tint.z, tint.w };
+					if (ImGui::ColorEdit4("Color Tint", tintValues))
+						mat->SetColorTint(DirectX::XMFLOAT4(tintValues[0], tintValues[1], tintValues[2], tintValues[3]));
+
+					auto scale = mat->GetUVScale();
+					float scaleValues[2] = { scale.x, scale.y };
+					if (ImGui::DragFloat2("UV Scale", scaleValues, 0.01f, 0.01f, 10.0f))
+						mat->SetUVScale(DirectX::XMFLOAT2(scaleValues[0], scaleValues[1]));
+
+					auto offset = mat->GetUVOffset();
+					float offsetValues[2] = { offset.x, offset.y };
+					if (ImGui::DragFloat2("UV Offset", offsetValues, 0.01f))
+						mat->SetUVOffset(DirectX::XMFLOAT2(offsetValues[0], offsetValues[1]));
+
+					auto& textureMap = mat->GetTextureMap();
+					if (textureMap.empty())
+					{
+						ImGui::Text("No textures");
+					}
+					else
+					{
+						for (auto& texturePair : textureMap)
+						{
+							ImGui::Text("Texture %u", texturePair.first);
+							ImGui::Image(reinterpret_cast<ImTextureID>(texturePair.second.Get()), ImVec2(64.0f, 64.0f));
+						}
+					}
+
+					ImGui::PopID();
 					ImGui::TreePop();
 				}
 			}
