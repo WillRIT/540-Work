@@ -3,24 +3,22 @@
 // - The name of the struct itself is unimportant
 // - The variable names don't have to match other shaders (just the semantics)
 // - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
-{
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float4 screenPosition	: SV_POSITION;
-	float2 uv : TEXCOORD;
-		float3 normal : NORMAL;
-  
-};
+#include "ShaderInclude.hlsli"
 
 Texture2D SurfaceTexture : register(t0); // "t" registers for textures
 SamplerState BasicSampler : register(s0); // "s" registers for samplers
 
 cbuffer PixelShaderConstants : register(b0)
 {
+    // lighting
+    int lights;
+    float3 ambientColor;
+    
+    // camera stuff
+    float3 cameraPosition;
+    float pad; 
+    
+ 
     float4 colorTint; // RGBA color (red, green, blue, alpha)
     float time;
     float3 padding;
@@ -41,8 +39,9 @@ float4 main(VertexToPixel input) : SV_TARGET
 {
     input.uv = input.uv * uvScale + uvOffset;
 
-    float4 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv);
-    surfaceColor *= colorTint;
-	
-	return surfaceColor;
+    float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv);
+    surfaceColor *= (colorTint * ambientColor);
+        
+    input.normal = normalize(input.normal);
+    return float4(input.normal, 1);
 }

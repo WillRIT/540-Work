@@ -20,6 +20,8 @@ public:
 	Game(const Game&) = delete; // Remove copy constructor
 	Game& operator=(const Game&) = delete; // Remove copy-assignment operator
 
+	// Ambient Light
+	DirectX::XMFLOAT3 ambientLightColor = { 0.2f, 0.2f, 0.2f };
 	// Primary functions
 	void Update(float deltaTime, float totalTime);
 	void Draw(float deltaTime, float totalTime);
