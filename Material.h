@@ -7,7 +7,6 @@
 #include <memory>
 #include <unordered_map>
 
-
 class Material
 {
 
@@ -31,6 +30,9 @@ public:
 	DirectX::XMFLOAT2 GetUVScale();
 	DirectX::XMFLOAT2 GetUVOffset();
 	DirectX::XMFLOAT4 GetColorTint();
+	void SetUVScale(const DirectX::XMFLOAT2& scale);
+	void SetUVOffset(const DirectX::XMFLOAT2& offset);
+	void SetColorTint(const DirectX::XMFLOAT4& tint);
 	
 	// Texture Stuff
 	void AddSampler(unsigned int index, Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler);

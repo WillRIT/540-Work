@@ -1,4 +1,3 @@
-
 // Struct representing the data we expect to receive from earlier pipeline stages
 // - Should match the output of our corresponding vertex shader
 // - The name of the struct itself is unimportant
@@ -19,6 +18,10 @@ struct VertexToPixel
 cbuffer PixelShaderConstants : register(b0)
 {
     float4 colorTint; // RGBA color (red, green, blue, alpha)
+    float time;
+    float3 padding;
+    float2 uvScale;
+    float2 uvOffset;
 };
 
 // --------------------------------------------------------
