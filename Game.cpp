@@ -246,7 +246,7 @@ void Game::CreateGeometry()
 	DirectX::XMFLOAT2 uvOffset1(3.0f, 0.0f);
 
 
-	std::shared_ptr<Material> greenMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(0.5f, 1.0f, 0.5f, 1.0f), uvScale1, uvOffset1);
+	std::shared_ptr<Material> greenMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), uvScale1, uvOffset1);
 
 	greenMat->AddSampler(0, sampler);
 	greenMat->AddTexture(0, woodSRV);
