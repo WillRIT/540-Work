@@ -33,12 +33,12 @@ VertexToPixel main( VertexShaderInput input )
 	
 	// Transform the normal to world space (for lighting calculations)
 	// We only care about rotation, not translation, so we cast to float3x3
-    
-	output.normal = mul((float3x3) worldInvTranspose, input.normal);
-    output.worldPosition = mul(world, float4(input.localPosition, 1)).xyz;
+    output.uv = input.uv;
+
+	output.normal = mul((float3x3)worldInvTranspose, input.normal);
+    output.worldPosition = mul(world, float4(input.localPosition, 1.0f)).xyz;
 	
 	// Pass through UV coordinates unchanged
-	output.uv = input.uv;
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

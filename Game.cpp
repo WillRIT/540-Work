@@ -529,6 +529,7 @@ void Game::Draw(float deltaTime, float totalTime)
 			// Set vertex shader data
 			VertexShaderConstants vsData{};
 			vsData.world = e.GetTransform()->GetWorldMatrix();
+			vsData.worldInverseTranspose = e.GetTransform()->GetWorldInverseTransposeMatrix();
 			vsData.view = camera->GetViewMatrix();
 			vsData.projection = camera->GetProjectionMatrix();
 			Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(VertexShaderConstants), D3D11_VERTEX_SHADER, 0);
@@ -537,6 +538,8 @@ void Game::Draw(float deltaTime, float totalTime)
 			PixelShaderConstants psData{};
 			psData.colorTint = mat->GetColorTint();
 			psData.uvOffset = mat->GetUVOffset();
+			psData.ambientColor = ambientLightColor;
+			psData.lightCount = 1;
 			psData.uvScale = mat->GetUVScale();
 			psData.time = totalTime;
 			Graphics::FillAndBindNextConstantBuffer(&psData, sizeof(PixelShaderConstants), D3D11_PIXEL_SHADER, 0);

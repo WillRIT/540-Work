@@ -37,11 +37,11 @@ cbuffer PixelShaderConstants : register(b0)
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+    input.normal = normalize(input.normal);
     input.uv = input.uv * uvScale + uvOffset;
 
     float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv);
     surfaceColor *= (colorTint * ambientColor);
         
-    input.normal = normalize(input.normal);
     return float4(input.normal, 1);
 }
