@@ -542,6 +542,7 @@ void Game::Draw(float deltaTime, float totalTime)
 			psData.lightCount = 1;
 			psData.uvScale = mat->GetUVScale();
 			psData.time = totalTime;
+			psData.cameraPosition = camera->GetTransform()->GetPosition();
 			Graphics::FillAndBindNextConstantBuffer(&psData, sizeof(PixelShaderConstants), D3D11_PIXEL_SHADER, 0);
 
 			// Draw one entity
@@ -553,7 +554,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - These should happen exactly ONCE PER FRAME
 	// - At the very end of the frame (after drawing *everything*)
 	{
-		ImGui::Render(); // Turns this frame’s UI into renderable triangles
+		ImGui::Render(); // Turns this frameï¿½s UI into renderable triangles
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // Draws it to the screen
 
 		// Present at the end of the frame
