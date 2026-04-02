@@ -21,9 +21,17 @@ SamplerState BasicSampler : register(s0);
 
 cbuffer PixelShaderConstants : register(b0)
 {
-    float4 colorTint;   // RGBA color tint - 16 bytes
-    float time;         // Time value for animations - 4 bytes
-    float3 padding;     // Padding to make buffer 32 bytes (multiple of 16)
+    // lighting
+    int lights;
+    float3 ambientColor;
+
+    // camera stuff
+    float3 cameraPosition;
+    float pad;
+
+    float4 colorTint;
+    float time;
+    float3 padding;
     float2 uvScale;
     float2 uvOffset;
 };
