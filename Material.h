@@ -16,6 +16,7 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> ps,
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> vs,
 		DirectX::XMFLOAT4 colorTint,
+		float roughness,
 		DirectX::XMFLOAT2 uvScale = DirectX::XMFLOAT2(1, 1),
 		DirectX::XMFLOAT2 uvOffset = DirectX::XMFLOAT2(0, 0));
 
@@ -29,9 +30,11 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> GetSampler(unsigned int index);
 	DirectX::XMFLOAT2 GetUVScale();
 	DirectX::XMFLOAT2 GetUVOffset();
+	float GetRoughness();
 	DirectX::XMFLOAT4 GetColorTint();
 	void SetUVScale(const DirectX::XMFLOAT2& scale);
 	void SetUVOffset(const DirectX::XMFLOAT2& offset);
+	void SetRoughness(float roughness);
 	void SetColorTint(const DirectX::XMFLOAT4& tint);
 	
 	// Texture Stuff
@@ -54,6 +57,7 @@ private:
 	DirectX::XMFLOAT2 uvScale;
 	DirectX::XMFLOAT2 uvOffset;
 	DirectX::XMFLOAT4 colorTint;
+	float roughness;
 
 };
 

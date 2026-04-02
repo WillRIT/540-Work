@@ -1,6 +1,7 @@
 #pragma once
 
 #include <DirectXMath.h>
+#include "Lights.h"
 
 struct VertexShaderConstants
 {
@@ -10,19 +11,20 @@ struct VertexShaderConstants
 	DirectX::XMFLOAT4X4 projection;
 };
 
+// FOR THE LOVE OF GOD MAKE SURE THIS MATCHES WITH THE HLSL VERSION OF THE BUFFERS CRYING EMOJI CHINESE BRUH
 struct PixelShaderConstants
-{
-
-	int lightCount;
+{	
+	int numLights;
 	DirectX::XMFLOAT3 ambientColor;
 
-	// Camera related
-	DirectX::XMFLOAT3 cameraPosition;
-	float pad; // Alignment
+	Light lights[MAX_LIGHTS];
 
-	DirectX::XMFLOAT4 colorTint;  // 16 bytes
-	float time;                    // 4 bytes
-	DirectX::XMFLOAT3 padding;    // 12 bytes padding (total = 32 bytes, multiple of 16)
+	DirectX::XMFLOAT3 cameraPosition;
+	float pad;
+
+	DirectX::XMFLOAT4 colorTint;
+	float roughness;
+	DirectX::XMFLOAT3 padding;
 	DirectX::XMFLOAT2 uvScale;
 	DirectX::XMFLOAT2 uvOffset;
 };

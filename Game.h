@@ -10,6 +10,7 @@
 #include "Camera.h"
 #include <DirectXMath.h>
 #include "Material.h"
+#include "Lights.h"
 
 class Game
 {
@@ -20,8 +21,7 @@ public:
 	Game(const Game&) = delete; // Remove copy constructor
 	Game& operator=(const Game&) = delete; // Remove copy-assignment operator
 
-	// Ambient Light
-	DirectX::XMFLOAT3 ambientLightColor = { 0.2f, 0.2f, 0.2f };
+
 	// Primary functions
 	void Update(float deltaTime, float totalTime);
 	void Draw(float deltaTime, float totalTime);
@@ -41,8 +41,22 @@ public:
 	std::vector<std::shared_ptr<Mesh>> meshes;
 	std::vector<std::shared_ptr<Material>> materials;
 
-	
+	// Light management
+	std::vector<Light> lights;
+	// Directional Lights
+	Light directionalLight1 = {};
+	Light directionalLight2 = {};
 
+	// Spot Lights
+	Light spotlight1 = {};
+	Light spotlight2 = {};
+
+	// Point Lights
+	Light pointLight1 = {};
+	Light pointLight2 = {};
+
+	// Ambient Light
+	DirectX::XMFLOAT3 ambientLightColor = { 0.2f, 0.2f, 0.2f }; // Grey Sky
 
 private:
 	bool animateEntities = true;

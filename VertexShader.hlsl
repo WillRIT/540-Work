@@ -8,9 +8,9 @@
 cbuffer VertexShaderConstants : register(b0)
 {
     matrix world;
+    matrix worldInvTranspose;
     matrix view;
     matrix projection;
-    matrix worldInvTranspose;
 };
 
 // --------------------------------------------------------

@@ -5,11 +5,12 @@
 Material::Material(
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> ps,
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vs,
-	DirectX::XMFLOAT4 colorTint, DirectX::XMFLOAT2 uvScale, DirectX::XMFLOAT2 uvOffset)
+	DirectX::XMFLOAT4 colorTint, float roughness, DirectX::XMFLOAT2 uvScale, DirectX::XMFLOAT2 uvOffset)
 {
 	this->ps = ps;
 	this->vs = vs;
 	this->colorTint = colorTint;
+	this->roughness = roughness;
 	this->uvScale = uvScale;
 	this->uvOffset = uvOffset;
 }
@@ -77,6 +78,11 @@ DirectX::XMFLOAT2 Material::GetUVOffset()
 	return uvOffset; 
 }
 
+float Material::GetRoughness()
+{
+	return roughness;
+}
+
 void Material::SetUVScale(const DirectX::XMFLOAT2& scale)
 {
 	uvScale = scale;
@@ -90,6 +96,11 @@ void Material::SetUVOffset(const DirectX::XMFLOAT2& offset)
 void Material::SetColorTint(const DirectX::XMFLOAT4& tint)
 {
 	colorTint = tint;
+}
+
+void Material::SetRoughness(float roughness)
+{
+	this->roughness = roughness;
 }
 
 void Material::AddSampler(unsigned int index, Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler)

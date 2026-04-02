@@ -84,6 +84,17 @@ Game::Game()
 	cameras.push_back(*camera);
 	cameras.push_back(*camera2);
 
+	// Light Stuff
+	Light directionalLight = {};
+
+	directionalLight.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight.Direction = { 0.0f, -1.0f, 0.0f };
+	directionalLight.Color = { 0.2, 0.2, 1.0 };
+	directionalLight.Intensity = 1.0f;
+
+	lights.push_back(directionalLight);
+
+
 	// Set initial graphics API state
 	//  - These settings persist until we change them
 	//  - Some of these, like the primitive topology & input layout, probably won't change
@@ -203,6 +214,7 @@ void Game::CreateGeometry()
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	Graphics::Device->CreateSamplerState(&sampDesc, sampler.GetAddressOf());
 
+	
 
 	//Load Shaders
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> basicVertexShader = LoadVertexShader(FixPath(L"VertexShader.cso").c_str());
@@ -211,6 +223,53 @@ void Game::CreateGeometry()
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> normalPixelShader = LoadPixelShader(FixPath(L"DebugNormalsPS.cso").c_str());
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> fancyShader = LoadPixelShader(FixPath(L"CustomPS.cso").c_str());
 
+	//Direction
+	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight1.Direction = XMFLOAT3(1.0f, 0.1f, 0.0f);
+	directionalLight1.Color = XMFLOAT3(1.0f, 0.3f, 0.4f); //maroon
+	directionalLight1.Intensity = 1.0f;
+
+	directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight2.Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);
+	directionalLight2.Color = XMFLOAT3(0.0f, 1.0f, 0.0f); //green
+	directionalLight2.Intensity = 1.1f;
+
+	//Point
+	pointLight1.Type = LIGHT_TYPE_POINT;
+	pointLight1.Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	pointLight1.Color = XMFLOAT3(1.0f, 1.0f, 1.0f); //white
+	pointLight1.Range = 10;
+	pointLight1.Intensity = 2;
+
+	pointLight2.Type = LIGHT_TYPE_POINT;
+	pointLight1.Position = XMFLOAT3(6.0f, 1.0f, 0.0f);
+	pointLight2.Color = XMFLOAT3(1.0f, 1.0f, 0.0f); //yellow
+	pointLight2.Range = 15;
+	pointLight2.Intensity = 1;
+
+	//Spot
+	spotlight1.Type = LIGHT_TYPE_SPOT;
+	spotlight1.Position = XMFLOAT3(6.0f, 1.5f, 0.0f);
+	spotlight1.Direction = XMFLOAT3(0.0f, -1.0f, 0.0f); //straight down
+	spotlight1.Color = XMFLOAT3(1.0f, 0.0f, 0.0f); //red
+	spotlight1.Range = 5.0f;
+	spotlight1.Intensity = 2.0f;
+	spotlight1.SpotInnerAngle = XMConvertToRadians(30);
+	spotlight1.SpotOuterAngle = XMConvertToRadians(60);
+
+	spotlight2.Type = LIGHT_TYPE_SPOT;
+	spotlight2.Position = XMFLOAT3(9.0f, 1.0f, 0.0f);
+	spotlight2.Direction = XMFLOAT3(0.0f, -0.8f, 0.0f); //straight down
+	spotlight2.Color = XMFLOAT3(0.0f, 0.0f, 1.0f); //blue
+	spotlight2.Range = 10.0f;
+	spotlight2.Intensity = 1.0f;
+	spotlight2.SpotInnerAngle = XMConvertToRadians(20);
+	spotlight2.SpotOuterAngle = XMConvertToRadians(40);
+
+	//Add lights to vector
+	lights.insert(lights.end(), { directionalLight1, directionalLight2, pointLight1, pointLight2, spotlight1, spotlight2 });
+	
+	
 	// Load Models - Convert wide strings to narrow strings using WideToNarrow helper
 	std::shared_ptr<Mesh> cubeMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/cube.obj")).c_str());
 	std::shared_ptr<Mesh> cylinderMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/cylinder.obj")).c_str());
@@ -247,25 +306,25 @@ void Game::CreateGeometry()
 	DirectX::XMFLOAT2 uvScaleRepeat(5.0f, 5.0f);
 
 
-	std::shared_ptr<Material> greenMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), uvScale1, uvOffset1);
+	std::shared_ptr<Material> greenMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, uvScale1, uvOffset1);
 
 	greenMat->AddSampler(0, sampler);
 	greenMat->AddTexture(0, woodSRV);
 	
-	std::shared_ptr<Material> redMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), defaultScale, defaultOffset);
+	std::shared_ptr<Material> redMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), 0.0f, defaultScale, defaultOffset);
 
 	redMat->AddSampler(0, sampler);
 	redMat->AddTexture(0, brickSRV);
 
-	std::shared_ptr<Material> blueMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(0.5f, 0.5f, 1.0f, 1.0f), defaultScale, defaultOffset);
+	std::shared_ptr<Material> blueMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(0.5f, 0.5f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
 
 	blueMat->AddSampler(0, sampler);
 	blueMat->AddTexture(0, brickSRV);
 
 
-	std::shared_ptr<Material> uvMat = std::make_shared<Material>(uvPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), defaultScale, defaultOffset);
-	std::shared_ptr<Material> normalMat = std::make_shared<Material>(normalPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), defaultScale, defaultOffset);
-	std::shared_ptr<Material> fancyMat = std::make_shared<Material>(fancyShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), uvScaleRepeat, defaultOffset);
+	std::shared_ptr<Material> uvMat = std::make_shared<Material>(uvPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
+	std::shared_ptr<Material> normalMat = std::make_shared<Material>(normalPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
+	std::shared_ptr<Material> fancyMat = std::make_shared<Material>(fancyShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, uvScaleRepeat, defaultOffset);
 
 	fancyMat->AddSampler(0, sampler);
 	fancyMat->AddTexture(0, woodSRV);
@@ -536,12 +595,15 @@ void Game::Draw(float deltaTime, float totalTime)
 
 			// Set pixel shader data
 			PixelShaderConstants psData{};
-			psData.colorTint = mat->GetColorTint();
-			psData.uvOffset = mat->GetUVOffset();
+
+			psData.numLights = (int)lights.size();
 			psData.ambientColor = ambientLightColor;
-			psData.lightCount = 1;
+			memcpy(&psData.lights, &lights[0], sizeof(Light) * lights.size());
+			psData.cameraPosition = camera->GetTransform()->GetPosition();
+			psData.colorTint = mat->GetColorTint();
+			psData.roughness = mat->GetRoughness();
 			psData.uvScale = mat->GetUVScale();
-			psData.time = totalTime;
+			psData.uvOffset = mat->GetUVOffset();
 			Graphics::FillAndBindNextConstantBuffer(&psData, sizeof(PixelShaderConstants), D3D11_PIXEL_SHADER, 0);
 
 			// Draw one entity
