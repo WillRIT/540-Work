@@ -322,9 +322,15 @@ void Game::CreateGeometry()
 	blueMat->AddTexture(0, brickSRV);
 
 
-	std::shared_ptr<Material> uvMat = std::make_shared<Material>(uvPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
-	std::shared_ptr<Material> normalMat = std::make_shared<Material>(normalPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
+	std::shared_ptr<Material> brickMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
+	std::shared_ptr<Material> woodMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
 	std::shared_ptr<Material> fancyMat = std::make_shared<Material>(fancyShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, uvScaleRepeat, defaultOffset);
+
+	brickMat->AddSampler(0, sampler);
+	brickMat->AddTexture(0, brickSRV);
+
+	woodMat->AddSampler(0, sampler);
+	woodMat->AddTexture(0, woodSRV);
 
 	fancyMat->AddSampler(0, sampler);
 	fancyMat->AddTexture(0, woodSRV);
@@ -334,8 +340,8 @@ void Game::CreateGeometry()
 	materials.push_back(redMat);
 	materials.push_back(greenMat);
 	materials.push_back(blueMat);
-	materials.push_back(uvMat);
-	materials.push_back(normalMat);
+	materials.push_back(brickMat);
+	materials.push_back(woodMat);
 	materials.push_back(fancyMat);
 
 
@@ -346,23 +352,21 @@ void Game::CreateGeometry()
 	entities.push_back(Entity(meshes[1], greenMat));      // 1: cylinder
 	
 	entities.push_back(Entity(meshes[2], redMat));         // 2: helix
-	entities.push_back(Entity(meshes[5], uvMat));         // 3: sphere
+	entities.push_back(Entity(meshes[5], brickMat));         // 3: sphere
 
-	entities.push_back(Entity(meshes[1], normalMat));     // 4: cylinder
-	entities.push_back(Entity(meshes[0], normalMat));     // 5: cube
+	entities.push_back(Entity(meshes[1], woodMat));     // 4: cylinder
+	entities.push_back(Entity(meshes[0], woodMat));     // 5: cube
 
-	entities.push_back(Entity(meshes[0], fancyMat));      // 6: quad_double
-	entities.push_back(Entity(meshes[6], fancyMat));      // 7: torus
+	entities.push_back(Entity(meshes[0], brickMat));      // 6: quad_double
+	entities.push_back(Entity(meshes[6], brickMat));      // 7: torus
 
 
-	entities[0].GetTransform()->MoveAbsolute(-9, 0, 0);
-	entities[1].GetTransform()->MoveAbsolute(-6, 0, 0);
-	entities[2].GetTransform()->MoveAbsolute(-3, 0, 0);
-	entities[3].GetTransform()->MoveAbsolute(0, 5, 0);
-	entities[4].GetTransform()->MoveAbsolute(3, 0, 0);
-	entities[5].GetTransform()->MoveAbsolute(6, 0, 0);
-	entities[6].GetTransform()->MoveAbsolute(9, 7, 0);
-	entities[7].GetTransform()->MoveAbsolute(12, 0, 0);
+ float spacing = 3.0f;
+	float startX = -((static_cast<float>(entities.size()) - 1.0f) * spacing) * 0.5f;
+	for (size_t i = 0; i < entities.size(); i++)
+	{
+		entities[i].GetTransform()->MoveAbsolute(startX + static_cast<float>(i) * spacing, 0.0f, 0.0f);
+	}
 
 
 	// Initialize transform vectors to match entity count
@@ -513,6 +517,32 @@ void Game::Update(float deltaTime, float totalTime)
 						}
 					}
 
+					ImGui::PopID();
+					ImGui::TreePop();
+				}
+			}
+		}
+
+		if (ImGui::CollapsingHeader("Lights"))
+		{
+			float ambientValues[3] = { ambientLightColor.x, ambientLightColor.y, ambientLightColor.z };
+			if (ImGui::ColorEdit3("Ambient Color", ambientValues))
+			{
+				ambientLightColor = DirectX::XMFLOAT3(ambientValues[0], ambientValues[1], ambientValues[2]);
+			}
+
+			for (size_t i = 0; i < lights.size(); i++)
+			{
+				std::string label = "Light " + std::to_string(i);
+				if (ImGui::TreeNode(label.c_str()))
+				{
+					ImGui::PushID(static_cast<int>(i));
+					float colorValues[3] = { lights[i].Color.x, lights[i].Color.y, lights[i].Color.z };
+					if (ImGui::ColorEdit3("Color", colorValues))
+					{
+						lights[i].Color = DirectX::XMFLOAT3(colorValues[0], colorValues[1], colorValues[2]);
+					}
+					ImGui::DragFloat("Intensity", &lights[i].Intensity, 0.01f, 0.0f, 10.0f);
 					ImGui::PopID();
 					ImGui::TreePop();
 				}
