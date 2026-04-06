@@ -25,6 +25,7 @@ public:
 	int GetIndexCount();
 	int GetVertexCount();
 	void Draw();
+	void CalculateTangents(Vertex* verts, int numVerts, unsigned int* indices, int numIndices);
 
 	~Mesh();
 	Mesh(Vertex vertices[], unsigned int indices[], int verts, int inds);

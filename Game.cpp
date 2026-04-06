@@ -109,7 +109,7 @@ Game::Game()
 				//  - This describes the layout of data sent to a vertex shader
 				//  - In other words, it describes how to interpret data (numbers) in a vertex buffer
 				//  - Doing this NOW because it requires a vertex shader's byte code to verify against!
-		D3D11_INPUT_ELEMENT_DESC inputElements[3] = {};
+		D3D11_INPUT_ELEMENT_DESC inputElements[4] = {};
 
 		// Set up the first element - a position, which is 3 float values
 		inputElements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;				// Most formats are described as color channels; really it just means "Three 32-bit floats"
@@ -126,6 +126,10 @@ Game::Game()
 		inputElements[2].SemanticName = "NORMAL";							// Match our vertex shader input!
 		inputElements[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// After the previous element
 
+		// Set up the fourth element - a tagent, which is 3 more float values aw yeah
+		inputElements[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		inputElements[3].SemanticName = "TANGENT";
+		inputElements[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 
 		// Create the input layout, verifying our description against actual shader code
 		ID3DBlob* vertexShaderBlob;
