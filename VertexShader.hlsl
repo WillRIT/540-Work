@@ -38,7 +38,9 @@ VertexToPixel main( VertexShaderInput input )
 	output.normal = mul((float3x3)worldInvTranspose, input.normal);
     output.worldPosition = mul(world, float4(input.localPosition, 1.0f)).xyz;
 	
-	// Pass through UV coordinates unchanged
+	// Tangent Space into the Pipeline
+	
+    output.tangent = mul((float3x3) world, input.tangent);
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

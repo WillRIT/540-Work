@@ -290,7 +290,9 @@ void Game::CreateGeometry()
 
 	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/wood_diff.png").c_str(), nullptr, woodSRV.GetAddressOf());
 	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/brick_diff.png").c_str(), nullptr, brickSRV.GetAddressOf());
-
+	
+	// Making my normals woah
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/wood_normal.png").c_str(), nullptr, woodNormalSRV.GetAddressOf());
 
 
 	meshes.push_back(cubeMesh);

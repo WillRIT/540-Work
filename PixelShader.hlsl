@@ -39,8 +39,12 @@ cbuffer PixelShaderConstants : register(b0)
 float4 main(VertexToPixel input) : SV_TARGET
 {
     input.normal = normalize(input.normal);
+    input.tangent = normalize(input.tangent);
     input.uv = input.uv * uvScale + uvOffset;
 
+    
+    input.normal = NormalMapping(SurfaceTexture, BasicSampler, input.uv, input.normal, input.tangent);
+    
     float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
     surfaceColor *= colorTint.rgb;
     
