@@ -347,19 +347,19 @@ void Game::CreateGeometry()
 
 	greenMat->AddSampler(0, sampler);
 	greenMat->AddTexture(0, woodSRV);
-	greenMat->AddTexture(2, woodNormalSRV);
+	greenMat->AddTexture(1, woodNormalSRV);
 	
 	std::shared_ptr<Material> redMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), 0.0f, defaultScale, defaultOffset);
 
 	redMat->AddSampler(0, sampler);
 	redMat->AddTexture(0, brickSRV);
-	redMat->AddTexture(2, brickNormalSRV);
+	redMat->AddTexture(1, brickNormalSRV);
 
 	std::shared_ptr<Material> blueMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
 
 	blueMat->AddSampler(0, sampler);
 	blueMat->AddTexture(0, rockSRV);
-	blueMat->AddTexture(2, rockNormalSRV);
+	blueMat->AddTexture(1, rockNormalSRV);
 
 	std::shared_ptr<Material> cushionMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
 	std::shared_ptr<Material> cobbleMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
@@ -370,12 +370,12 @@ void Game::CreateGeometry()
 
 	cobbleMat->AddSampler(0, sampler);
 	cobbleMat->AddTexture(0, cobblestoneSRV);
-	cobbleMat->AddTexture(2, cobblestoneNormalSRV);
+	cobbleMat->AddTexture(1, cobblestoneNormalSRV);
 
 
 	cushionMat->AddSampler(0, sampler);
 	cushionMat->AddTexture(0, cushionSRV);
-	cushionMat->AddTexture(2, cushionNormalSRV);
+	cushionMat->AddTexture(1, cushionNormalSRV);
 
 
 	fancyMat->AddSampler(0, sampler);
@@ -384,7 +384,7 @@ void Game::CreateGeometry()
 
 	rockMat->AddSampler(0, sampler);
 	rockMat->AddTexture(0, rockSRV);
-	rockMat->AddTexture(2, rockNormalSRV);
+	rockMat->AddTexture(1, rockNormalSRV);
 
 
 	materials.push_back(redMat);
