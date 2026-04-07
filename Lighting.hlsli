@@ -16,7 +16,7 @@
 //see Lights.h for explanation of fields
 struct Lights
 {
-    //64 bytes (power of 2 is faster)
+    //64 bytes 
     int type;
     float3 direction;
     float range;
@@ -103,6 +103,11 @@ float3 SpotLight(Lights currentLight, float3 normal, float3 surfaceToCamera, flo
     return PointLight(currentLight, normal, surfaceToCamera, worldPosition, roughness, color) * spotTerm;
 }
 
+// Basic sample and unpack
+float3 SampleAndUnpackNormalMap(Texture2D map, SamplerState samp, float2 uv)
+{
+    return map.Sample(samp, uv).rgb * 2.0f - 1.0f;
+}
 float3 NormalMapping(Texture2D map, SamplerState samp, float2 uv, float3 normal, float3 tangent)
 {
 	// Grab the normal from the map

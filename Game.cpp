@@ -288,11 +288,42 @@ void Game::CreateGeometry()
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brickSRV;
 
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodNormalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brickNormalSRV;
+
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneNormalSRV;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionNormalSRV;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockNormalSRV;
+
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> defaultNormalSRV;
+
+
+	// Make the textures from File
 	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/wood_diff.png").c_str(), nullptr, woodSRV.GetAddressOf());
 	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/brick_diff.png").c_str(), nullptr, brickSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/cobblestone.png").c_str(), nullptr, cobblestoneSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/cushion.png").c_str(), nullptr, cushionSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/rock.png").c_str(), nullptr, rockSRV.GetAddressOf());
+
+
+
 	
 	// Making my normals woah
 	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/wood_normal.png").c_str(), nullptr, woodNormalSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/brick_normal.png").c_str(), nullptr, brickNormalSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/rock_normal.png").c_str(), nullptr, rockNormalSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/cobblestone_normal.png").c_str(), nullptr, cobblestoneNormalSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/cushion_normal.png").c_str(), nullptr, cushionNormalSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/flat_normals.png").c_str(), nullptr, defaultNormalSRV.GetAddressOf());
+
+
 
 
 	meshes.push_back(cubeMesh);
@@ -316,38 +347,51 @@ void Game::CreateGeometry()
 
 	greenMat->AddSampler(0, sampler);
 	greenMat->AddTexture(0, woodSRV);
+	greenMat->AddTexture(2, woodNormalSRV);
 	
 	std::shared_ptr<Material> redMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), 0.0f, defaultScale, defaultOffset);
 
 	redMat->AddSampler(0, sampler);
 	redMat->AddTexture(0, brickSRV);
+	redMat->AddTexture(2, brickNormalSRV);
 
-	std::shared_ptr<Material> blueMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(0.5f, 0.5f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
+	std::shared_ptr<Material> blueMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
 
 	blueMat->AddSampler(0, sampler);
-	blueMat->AddTexture(0, brickSRV);
+	blueMat->AddTexture(0, rockSRV);
+	blueMat->AddTexture(2, rockNormalSRV);
 
+	std::shared_ptr<Material> cushionMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
+	std::shared_ptr<Material> cobbleMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
+	std::shared_ptr<Material> rockMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
 
-	std::shared_ptr<Material> brickMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
-	std::shared_ptr<Material> woodMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
 	std::shared_ptr<Material> fancyMat = std::make_shared<Material>(fancyShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, uvScaleRepeat, defaultOffset);
 
-	brickMat->AddSampler(0, sampler);
-	brickMat->AddTexture(0, brickSRV);
 
-	woodMat->AddSampler(0, sampler);
-	woodMat->AddTexture(0, woodSRV);
+	cobbleMat->AddSampler(0, sampler);
+	cobbleMat->AddTexture(0, cobblestoneSRV);
+	cobbleMat->AddTexture(2, cobblestoneNormalSRV);
+
+
+	cushionMat->AddSampler(0, sampler);
+	cushionMat->AddTexture(0, cushionSRV);
+	cushionMat->AddTexture(2, cushionNormalSRV);
+
 
 	fancyMat->AddSampler(0, sampler);
 	fancyMat->AddTexture(0, woodSRV);
 	fancyMat->AddTexture(1, brickSRV);
 
+	rockMat->AddSampler(0, sampler);
+	rockMat->AddTexture(0, rockSRV);
+	rockMat->AddTexture(2, rockNormalSRV);
+
 
 	materials.push_back(redMat);
 	materials.push_back(greenMat);
 	materials.push_back(blueMat);
-	materials.push_back(brickMat);
-	materials.push_back(woodMat);
+	materials.push_back(cobbleMat);
+	materials.push_back(cushionMat);
 	materials.push_back(fancyMat);
 
 
@@ -358,13 +402,13 @@ void Game::CreateGeometry()
 	entities.push_back(Entity(meshes[1], greenMat));      // 1: cylinder
 	
 	entities.push_back(Entity(meshes[2], redMat));         // 2: helix
-	entities.push_back(Entity(meshes[5], brickMat));         // 3: sphere
+	entities.push_back(Entity(meshes[5], cobbleMat));         // 3: sphere
 
-	entities.push_back(Entity(meshes[1], woodMat));     // 4: cylinder
-	entities.push_back(Entity(meshes[0], woodMat));     // 5: cube
+	entities.push_back(Entity(meshes[5], cushionMat));     // 4: cylinder
+	entities.push_back(Entity(meshes[5], cushionMat));     // 5: cube
 
-	entities.push_back(Entity(meshes[0], brickMat));      // 6: quad_double
-	entities.push_back(Entity(meshes[6], brickMat));      // 7: torus
+	entities.push_back(Entity(meshes[0], rockMat));      // 6: quad_double
+	entities.push_back(Entity(meshes[6], rockMat));      // 7: torus
 
 
  float spacing = 3.0f;

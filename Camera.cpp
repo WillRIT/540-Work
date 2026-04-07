@@ -7,7 +7,7 @@ Camera::Camera(DirectX::XMFLOAT3 initPos, float initialFov) :
 	nearClip(0.01f),
 	farClip(100.0f),
 	movSpeed(5.0f),
-	mouseSpeed(0.1f),
+	mouseSpeed(1.1f),
 	isActive(true)
 {
 	transform = std::make_shared<Transform>();

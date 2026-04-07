@@ -7,7 +7,9 @@
 #include "Lighting.hlsli"
 
 Texture2D SurfaceTexture : register(t0); // "t" registers for textures
+Texture2D NormalMap : register(t1); //second register for normal maps
 SamplerState BasicSampler : register(s0); // "s" registers for samplers
+
 
 cbuffer PixelShaderConstants : register(b0)
 {
@@ -43,7 +45,7 @@ float4 main(VertexToPixel input) : SV_TARGET
     input.uv = input.uv * uvScale + uvOffset;
 
     
-    input.normal = NormalMapping(SurfaceTexture, BasicSampler, input.uv, input.normal, input.tangent);
+    input.normal = NormalMapping(NormalMap, BasicSampler, input.uv, input.normal, input.tangent);
     
     float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
     surfaceColor *= colorTint.rgb;
