@@ -482,8 +482,10 @@ void Game::CreateGeometry()
 	entities.push_back(Entity(meshes[6], rockMat));      // 7: torus
 
 	// Create the Sky
-	 sky = Sky(cubeMesh, sampler, skyVS, skyPS);
- float spacing = 3.0f;
+	sky = std::make_shared<Sky>(cubeMesh, sampler, skyVS, skyPS);
+	
+	
+	float spacing = 3.0f;
 	float startX = -((static_cast<float>(entities.size()) - 1.0f) * spacing) * 0.5f;
 	for (size_t i = 0; i < entities.size(); i++)
 	{
@@ -761,7 +763,7 @@ void Game::Draw(float deltaTime, float totalTime)
 			// Draw one entity
 			e.Draw();
 		}
-		sky.Draw(camera);
+		sky->Draw(camera);
 	}
 
 	// Frame END

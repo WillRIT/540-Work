@@ -42,7 +42,7 @@ public:
 	std::vector<std::shared_ptr<Mesh>> meshes;
 	std::vector<std::shared_ptr<Material>> materials;
 
-	Sky sky;
+	std::shared_ptr<Sky> sky;
 
 	// Light management
 	std::vector<Light> lights;

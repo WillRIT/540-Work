@@ -9,7 +9,7 @@
 Sky::Sky(std::shared_ptr<Mesh> mesh, Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler, Microsoft::WRL::ComPtr<ID3D11VertexShader> skyVS,
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> skyPS)
 {
-	skyMesh = std::make_shared<Mesh>(mesh);
+	skyMesh = mesh;
 
 	// Rasterizer to reverse the cull mode
 	D3D11_RASTERIZER_DESC rastDesc = {};
@@ -139,6 +139,7 @@ void Sky::Draw(std::shared_ptr<Camera> cam)
 	skyVSConstants vsData{};
 	vsData.view = cam->GetViewMatrix();
 	vsData.projection = cam->GetProjectionMatrix();
+	Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(skyVSConstants), D3D11_VERTEX_SHADER, 0);
 
 	// Our awesome Pixel data
 
