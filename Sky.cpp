@@ -26,12 +26,12 @@ Sky::Sky(std::shared_ptr<Mesh> mesh, Microsoft::WRL::ComPtr<ID3D11SamplerState> 
 	Graphics::Device->CreateDepthStencilState(&depthDesc, skyDepthState.GetAddressOf());
 
 	skySRV = CreateCubemap(
-		FixPath(L"../../Assets/Skies/right.png").c_str(),
-		FixPath(L"../../Assets/Skies/left.png").c_str(),
-		FixPath(L"../../Assets/Skies/up.png").c_str(),
-		FixPath(L"../../Assets/Skies/down.png").c_str(),
-		FixPath(L"../../Assets/Skies/front.png").c_str(),
-		FixPath(L"../../Assets/Skies/back.png").c_str());
+		FixPath(L"../../Assets/Skies/Clouds Blue/right.png").c_str(),
+		FixPath(L"../../Assets/Skies/Clouds Blue/left.png").c_str(),
+		FixPath(L"../../Assets/Skies/Clouds Blue/up.png").c_str(),
+		FixPath(L"../../Assets/Skies/Clouds Blue/down.png").c_str(),
+		FixPath(L"../../Assets/Skies/Clouds Blue/front.png").c_str(),
+		FixPath(L"../../Assets/Skies/Clouds Blue/back.png").c_str());
 
 	this->samplerOptions = sampler;
 	this->skyPS = skyPS;
