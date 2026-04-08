@@ -1,11 +1,42 @@
 #include "Sky.h"
-#include "Sky.h"
 #include "Graphics.h"
 #include <WICTextureLoader.h>
 #include <DirectXMath.h>
 #include <memory>
+#include "PathHelpers.h"
 
-Sky::Sky() {}
+
+Sky::Sky(std::shared_ptr<Mesh> mesh, Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler, Microsoft::WRL::ComPtr<ID3D11VertexShader> skyVS,
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> skyPS)
+{
+	skyMesh = std::make_shared<Mesh>(mesh);
+
+	// Rasterizer to reverse the cull mode
+	D3D11_RASTERIZER_DESC rastDesc = {};
+	rastDesc.CullMode = D3D11_CULL_FRONT; // Draw the inside instead of the outside!
+	rastDesc.FillMode = D3D11_FILL_SOLID;
+	rastDesc.DepthClipEnable = true;
+	Graphics::Device->CreateRasterizerState(&rastDesc, skyRasterState.GetAddressOf());
+
+	// Depth state so that we ACCEPT pixels with a depth == 1
+	D3D11_DEPTH_STENCIL_DESC depthDesc = {};
+	depthDesc.DepthEnable = true;
+	depthDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	Graphics::Device->CreateDepthStencilState(&depthDesc, skyDepthState.GetAddressOf());
+
+	skySRV = CreateCubemap(
+		FixPath(L"../../Assets/Skies/right.png").c_str(),
+		FixPath(L"../../Assets/Skies/left.png").c_str(),
+		FixPath(L"../../Assets/Skies/up.png").c_str(),
+		FixPath(L"../../Assets/Skies/down.png").c_str(),
+		FixPath(L"../../Assets/Skies/front.png").c_str(),
+		FixPath(L"../../Assets/Skies/back.png").c_str());
+
+	this->samplerOptions = sampler;
+	this->skyPS = skyPS;
+	this->skyVS = skyVS;
+}
 Sky::~Sky() {}
 
 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Sky::CreateCubemap(
@@ -88,4 +119,37 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Sky::CreateCubemap(
 
  // Send back the SRV, which is what we need for our shaders
 	return cubeSRV;
+}
+
+void Sky::Draw(std::shared_ptr<Camera> cam)
+{
+	Graphics::Context->RSSetState(skyRasterState.Get());
+	Graphics::Context->OMSetDepthStencilState(skyDepthState.Get(), 0);
+	Graphics::Context->VSSetShader(skyVS.Get(), 0, 0);
+	Graphics::Context->PSSetShader(skyPS.Get(), 0, 0);
+
+	// Our awesome vertex data
+
+	struct skyVSConstants
+	{
+		DirectX::XMFLOAT4X4 view;
+		DirectX::XMFLOAT4X4 projection;
+	};
+
+	skyVSConstants vsData{};
+	vsData.view = cam->GetViewMatrix();
+	vsData.projection = cam->GetProjectionMatrix();
+
+	// Our awesome Pixel data
+
+	Graphics::Context->PSSetShaderResources(0, 1, skySRV.GetAddressOf());
+	Graphics::Context->PSSetSamplers(0, 1, samplerOptions.GetAddressOf());
+
+	// Set mesh Buffers and draw
+	skyMesh->Draw();
+
+	// Reset state
+	Graphics::Context->RSSetState(0);
+	Graphics::Context->OMSetDepthStencilState(0, 0);
+
 }

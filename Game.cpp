@@ -9,7 +9,8 @@
 #include "Entity.h"
 #include "Camera.h"
 #include "Material.h"
-
+#include "Lights.h"
+#include "Sky.h"
 #include <WICTextureLoader.h>
 #include <DirectXMath.h>
 #include <memory>
@@ -226,6 +227,10 @@ void Game::CreateGeometry()
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> uvPixelShader = LoadPixelShader(FixPath(L"DebugUVsPS.cso").c_str());
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> normalPixelShader = LoadPixelShader(FixPath(L"DebugNormalsPS.cso").c_str());
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> fancyShader = LoadPixelShader(FixPath(L"CustomPS.cso").c_str());
+
+	// Sky Stuff
+	Microsoft::WRL::ComPtr<ID3D11VertexShader> skyVS = LoadVertexShader(FixPath(L"SkyVS.cso").c_str());
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> skyPS = LoadPixelShader(FixPath(L"SkyPS.cso").c_str());
 
 	//Direction
 	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
@@ -476,7 +481,8 @@ void Game::CreateGeometry()
 	entities.push_back(Entity(meshes[0], rockMat));      // 6: quad_double
 	entities.push_back(Entity(meshes[6], rockMat));      // 7: torus
 
-
+	// Create the Sky
+	 sky = Sky(cubeMesh, sampler, skyVS, skyPS);
  float spacing = 3.0f;
 	float startX = -((static_cast<float>(entities.size()) - 1.0f) * spacing) * 0.5f;
 	for (size_t i = 0; i < entities.size(); i++)
@@ -755,6 +761,7 @@ void Game::Draw(float deltaTime, float totalTime)
 			// Draw one entity
 			e.Draw();
 		}
+		sky.Draw(camera);
 	}
 
 	// Frame END

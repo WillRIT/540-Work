@@ -11,6 +11,7 @@
 #include <DirectXMath.h>
 #include "Material.h"
 #include "Lights.h"
+#include "Sky.h"
 
 class Game
 {
@@ -40,6 +41,8 @@ public:
 	std::vector<Entity> entities;
 	std::vector<std::shared_ptr<Mesh>> meshes;
 	std::vector<std::shared_ptr<Material>> materials;
+
+	Sky sky;
 
 	// Light management
 	std::vector<Light> lights;

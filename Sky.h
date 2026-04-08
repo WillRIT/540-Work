@@ -11,9 +11,12 @@
 class Sky
 {
 public:
-	Sky();
+	Sky(std::shared_ptr<Mesh> mesh, Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler, Microsoft::WRL::ComPtr<ID3D11VertexShader> skyVS,
+		Microsoft::WRL::ComPtr<ID3D11PixelShader> skyPS);
 	~Sky();
-
+	std::shared_ptr<Mesh> skyMesh;
+	
+	void Draw(std::shared_ptr<Camera> cam);
 
 
 private:
@@ -31,7 +34,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> skyVS;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> skyPS;
 
-	std::shared_ptr<Mesh> skyMesh;
 
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> skyRasterState;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> skyDepthState;
