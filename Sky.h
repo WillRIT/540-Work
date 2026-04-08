@@ -1,11 +1,14 @@
 #pragma once
-class Sky
+#pragma once
 
 #include "Mesh.h"
 #include "Camera.h"
 
 #include <memory>
 #include <wrl/client.h> // Used for ComPtr
+#include <d3d11.h>
+
+class Sky
 {
 public:
 	Sky();

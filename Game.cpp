@@ -315,13 +315,79 @@ void Game::CreateGeometry()
 
 
 	
-	// Making my normals woah
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/wood_normal.png").c_str(), nullptr, woodNormalSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/brick_normal.png").c_str(), nullptr, brickNormalSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/rock_normal.png").c_str(), nullptr, rockNormalSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/cobblestone_normal.png").c_str(), nullptr, cobblestoneNormalSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/cushion_normal.png").c_str(), nullptr, cushionNormalSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/flat_normals.png").c_str(), nullptr, defaultNormalSRV.GetAddressOf());
+   // Making my normals woah
+	CreateWICTextureFromFileEx(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/wood_normal.png").c_str(),
+		0,
+		D3D11_USAGE_DEFAULT,
+		D3D11_BIND_SHADER_RESOURCE,
+		0,
+		0,
+		WIC_LOADER_IGNORE_SRGB,
+		nullptr,
+		woodNormalSRV.GetAddressOf());
+	CreateWICTextureFromFileEx(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/brick_normal.png").c_str(),
+		0,
+		D3D11_USAGE_DEFAULT,
+		D3D11_BIND_SHADER_RESOURCE,
+		0,
+		0,
+		WIC_LOADER_IGNORE_SRGB,
+		nullptr,
+		brickNormalSRV.GetAddressOf());
+	CreateWICTextureFromFileEx(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/rock_normal.png").c_str(),
+		0,
+		D3D11_USAGE_DEFAULT,
+		D3D11_BIND_SHADER_RESOURCE,
+		0,
+		0,
+		WIC_LOADER_IGNORE_SRGB,
+		nullptr,
+		rockNormalSRV.GetAddressOf());
+	CreateWICTextureFromFileEx(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/cobblestone_normal.png").c_str(),
+		0,
+		D3D11_USAGE_DEFAULT,
+		D3D11_BIND_SHADER_RESOURCE,
+		0,
+		0,
+		WIC_LOADER_IGNORE_SRGB,
+		nullptr,
+		cobblestoneNormalSRV.GetAddressOf());
+	CreateWICTextureFromFileEx(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/cushion_normal.png").c_str(),
+		0,
+		D3D11_USAGE_DEFAULT,
+		D3D11_BIND_SHADER_RESOURCE,
+		0,
+		0,
+		WIC_LOADER_IGNORE_SRGB,
+		nullptr,
+		cushionNormalSRV.GetAddressOf());
+	CreateWICTextureFromFileEx(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		FixPath(L"../../Assets/Textures/flat_normals.png").c_str(),
+		0,
+		D3D11_USAGE_DEFAULT,
+		D3D11_BIND_SHADER_RESOURCE,
+		0,
+		0,
+		WIC_LOADER_IGNORE_SRGB,
+		nullptr,
+		defaultNormalSRV.GetAddressOf());
 
 
 

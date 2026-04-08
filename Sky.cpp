@@ -1,9 +1,12 @@
 #include "Sky.h"
+#include "Sky.h"
 #include "Graphics.h"
 #include <WICTextureLoader.h>
 #include <DirectXMath.h>
 #include <memory>
 
+Sky::Sky() {}
+Sky::~Sky() {}
 
 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Sky::CreateCubemap(
 	const wchar_t* right,
@@ -18,12 +21,12 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Sky::CreateCubemap(
 	// - Explicitly NOT generating mipmaps, as we don't need them for the sky!
 	// - Order matters here!  +X, -X, +Y, -Y, +Z, -Z
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> textures[6] = {};
-	CreateWICTextureFromFile(Graphics::Device.Get(), right, (ID3D11Resource**)textures[0].GetAddressOf(), 0);
-	CreateWICTextureFromFile(Graphics::Device.Get(), left, (ID3D11Resource**)textures[1].GetAddressOf(), 0);
-	CreateWICTextureFromFile(Graphics::Device.Get(), up, (ID3D11Resource**)textures[2].GetAddressOf(), 0);
-	CreateWICTextureFromFile(Graphics::Device.Get(), down, (ID3D11Resource**)textures[3].GetAddressOf(), 0);
-	CreateWICTextureFromFile(Graphics::Device.Get(), front, (ID3D11Resource**)textures[4].GetAddressOf(), 0);
-	CreateWICTextureFromFile(Graphics::Device.Get(), back, (ID3D11Resource**)textures[5].GetAddressOf(), 0);
+   DirectX::CreateWICTextureFromFile(Graphics::Device.Get(), right, (ID3D11Resource**)textures[0].GetAddressOf(), 0);
+	DirectX::CreateWICTextureFromFile(Graphics::Device.Get(), left, (ID3D11Resource**)textures[1].GetAddressOf(), 0);
+	DirectX::CreateWICTextureFromFile(Graphics::Device.Get(), up, (ID3D11Resource**)textures[2].GetAddressOf(), 0);
+	DirectX::CreateWICTextureFromFile(Graphics::Device.Get(), down, (ID3D11Resource**)textures[3].GetAddressOf(), 0);
+	DirectX::CreateWICTextureFromFile(Graphics::Device.Get(), front, (ID3D11Resource**)textures[4].GetAddressOf(), 0);
+	DirectX::CreateWICTextureFromFile(Graphics::Device.Get(), back, (ID3D11Resource**)textures[5].GetAddressOf(), 0);
 
 	// We'll assume all of the textures are the same color format and resolution,
 	// so get the description of the first texture
@@ -83,5 +86,6 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Sky::CreateCubemap(
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cubeSRV;
 	Graphics::Device->CreateShaderResourceView(cubeMapTexture.Get(), &srvDesc, cubeSRV.GetAddressOf());
 
-	// Send back the SRV, which is what we need for our shaders
+ // Send back the SRV, which is what we need for our shaders
 	return cubeSRV;
+}
