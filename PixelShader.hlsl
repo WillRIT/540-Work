@@ -6,10 +6,10 @@
 #include "ShaderInclude.hlsli"
 #include "Lighting.hlsli"
 
-Texture2D SurfaceTexture : register(t0); // "t" registers for textures
-Texture2D NormalMap : register(t1);  //second register for normal maps
-SamplerState BasicSampler : register(s0); // "s" registers for samplers
-
+// PBR Texture Slots
+Texture2D Albedo : register(t0);
+Texture2D NormalMap : register(t1);
+SamplerState BasicSampler : register(s0);
 
 cbuffer PixelShaderConstants : register(b0)
 {
@@ -47,7 +47,8 @@ float4 main(VertexToPixel input) : SV_TARGET
     
     input.normal = NormalMapping(NormalMap, BasicSampler, input.uv, input.normal, input.tangent);
     
-    float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
+    float3 surfaceColor = Albedo.Sample(BasicSampler, input.uv).rgb;
+
     // also gamma correct this
     surfaceColor = pow(surfaceColor, 2.2);
     surfaceColor *= colorTint.rgb;

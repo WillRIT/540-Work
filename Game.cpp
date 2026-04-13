@@ -227,10 +227,12 @@ void Game::CreateGeometry()
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> uvPixelShader = LoadPixelShader(FixPath(L"DebugUVsPS.cso").c_str());
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> normalPixelShader = LoadPixelShader(FixPath(L"DebugNormalsPS.cso").c_str());
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> fancyShader = LoadPixelShader(FixPath(L"CustomPS.cso").c_str());
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> PBRPixelShader = LoadPixelShader(FixPath(L"PBRPixelShader.cso").c_str());
 
     // Sky Stuff
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> skyVS = LoadVertexShader(FixPath(L"SkyVertexShader.cso").c_str());
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> skyPS = LoadPixelShader(FixPath(L"SkyPixelShader.cso").c_str());
+	
 
 	//Direction
 	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
@@ -238,6 +240,8 @@ void Game::CreateGeometry()
 	directionalLight1.Color = XMFLOAT3(1.0f, 0.3f, 0.4f); //maroon
 	directionalLight1.Intensity = 1.0f;
 
+	
+/*
 	directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
 	directionalLight2.Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);
 	directionalLight2.Color = XMFLOAT3(0.0f, 1.0f, 0.0f); //green
@@ -255,7 +259,7 @@ void Game::CreateGeometry()
 	pointLight2.Color = XMFLOAT3(1.0f, 1.0f, 0.0f); //yellow
 	pointLight2.Range = 15;
 	pointLight2.Intensity = 1;
-
+*/
 	//Spot
 	spotlight1.Type = LIGHT_TYPE_SPOT;
 	spotlight1.Position = XMFLOAT3(6.0f, 1.5f, 0.0f);
@@ -276,7 +280,7 @@ void Game::CreateGeometry()
 	spotlight2.SpotOuterAngle = XMConvertToRadians(40);
 
 	//Add lights to vector
-	lights.insert(lights.end(), { directionalLight1, directionalLight2, pointLight1, pointLight2, spotlight1, spotlight2 });
+	lights.insert(lights.end(), { directionalLight1, spotlight1, spotlight2 });
 	
 	
 	// Load Models - Convert wide strings to narrow strings using WideToNarrow helper
@@ -288,113 +292,41 @@ void Game::CreateGeometry()
 	std::shared_ptr<Mesh> sphereMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/sphere.obj")).c_str());
 	std::shared_ptr<Mesh> torusMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/torus.obj")).c_str());
 
-	// Load Textures
+	//Load textures
+	//create SRVs for textures
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeNormalsSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeMetalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeRoughnessSRV;
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brickSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedNormalsSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedMetalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedRoughnessSRV;
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodNormalSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brickNormalSRV;
-
-
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneNormalSRV;
-
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionNormalSRV;
-
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockNormalSRV;
-
-
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> defaultNormalSRV;
-
-
-	// Make the textures from File
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/wood_diff.png").c_str(), nullptr, woodSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/brick_diff.png").c_str(), nullptr, brickSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/cobblestone.png").c_str(), nullptr, cobblestoneSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/cushion.png").c_str(), nullptr, cushionSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/rock.png").c_str(), nullptr, rockSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>paintSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>paintNormalsSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>paintMetalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>paintRoughnessSRV;
 
 
 
-	
-   // Making my normals woah
-	CreateWICTextureFromFileEx(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		FixPath(L"../../Assets/Textures/wood_normal.png").c_str(),
-		0,
-		D3D11_USAGE_DEFAULT,
-		D3D11_BIND_SHADER_RESOURCE,
-		0,
-		0,
-		WIC_LOADER_IGNORE_SRGB,
-		nullptr,
-		woodNormalSRV.GetAddressOf());
-	CreateWICTextureFromFileEx(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		FixPath(L"../../Assets/Textures/brick_normal.png").c_str(),
-		0,
-		D3D11_USAGE_DEFAULT,
-		D3D11_BIND_SHADER_RESOURCE,
-		0,
-		0,
-		WIC_LOADER_IGNORE_SRGB,
-		nullptr,
-		brickNormalSRV.GetAddressOf());
-	CreateWICTextureFromFileEx(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		FixPath(L"../../Assets/Textures/rock_normal.png").c_str(),
-		0,
-		D3D11_USAGE_DEFAULT,
-		D3D11_BIND_SHADER_RESOURCE,
-		0,
-		0,
-		WIC_LOADER_IGNORE_SRGB,
-		nullptr,
-		rockNormalSRV.GetAddressOf());
-	CreateWICTextureFromFileEx(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		FixPath(L"../../Assets/Textures/cobblestone_normal.png").c_str(),
-		0,
-		D3D11_USAGE_DEFAULT,
-		D3D11_BIND_SHADER_RESOURCE,
-		0,
-		0,
-		WIC_LOADER_IGNORE_SRGB,
-		nullptr,
-		cobblestoneNormalSRV.GetAddressOf());
-	CreateWICTextureFromFileEx(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		FixPath(L"../../Assets/Textures/cushion_normal.png").c_str(),
-		0,
-		D3D11_USAGE_DEFAULT,
-		D3D11_BIND_SHADER_RESOURCE,
-		0,
-		0,
-		WIC_LOADER_IGNORE_SRGB,
-		nullptr,
-		cushionNormalSRV.GetAddressOf());
-	CreateWICTextureFromFileEx(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		FixPath(L"../../Assets/Textures/flat_normals.png").c_str(),
-		0,
-		D3D11_USAGE_DEFAULT,
-		D3D11_BIND_SHADER_RESOURCE,
-		0,
-		0,
-		WIC_LOADER_IGNORE_SRGB,
-		nullptr,
-		defaultNormalSRV.GetAddressOf());
-
-
+	//Load textures (albedo)
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/bronze_albedo.png").c_str(), 0, bronzeSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/scratched_albedo.png").c_str(), 0, scratchedSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/paint_albedo.png").c_str(), 0, paintSRV.GetAddressOf());
+	//Load normal maps
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/bronze_normals.png").c_str(), 0, bronzeNormalsSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/scratched_normals.png").c_str(), 0, scratchedNormalsSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/paint_normals.png").c_str(), 0, paintNormalsSRV.GetAddressOf());
+	//Load metalness
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/bronze_metal.png").c_str(), 0, bronzeMetalSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/scratched_metal.png").c_str(), 0, scratchedMetalSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/paint_metal.png").c_str(), 0, paintMetalSRV.GetAddressOf());
+	//Load roughness
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/bronze_roughness.png").c_str(), 0, bronzeRoughnessSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/scratched_roughness.png").c_str(), 0, scratchedRoughnessSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/paint_roughness.png").c_str(), 0, paintRoughnessSRV.GetAddressOf());
 
 
 	meshes.push_back(cubeMesh);
@@ -414,77 +346,46 @@ void Game::CreateGeometry()
 	DirectX::XMFLOAT2 uvScaleRepeat(5.0f, 5.0f);
 
 
-	std::shared_ptr<Material> greenMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, uvScale1, uvOffset1);
+	std::shared_ptr<Material> matBronzePBR = std::make_shared<Material>(PBRPixelShader, basicVertexShader, XMFLOAT4(1, 1, 1, 1), 0.0, defaultScale, defaultOffset);
+	std::shared_ptr<Material> matScratchedPBR = std::make_shared<Material>(PBRPixelShader, basicVertexShader, XMFLOAT4(1, 1, 1, 1), 0.0, defaultScale, defaultOffset);
+	std::shared_ptr<Material> matPaintPBR = std::make_shared<Material>(PBRPixelShader, basicVertexShader, XMFLOAT4(1, 1, 1, 1), 0.0, defaultScale, defaultOffset);
 
-	greenMat->AddSampler(0, sampler);
-	greenMat->AddTexture(0, woodSRV);
-	greenMat->AddTexture(1, woodNormalSRV);
-	
-	std::shared_ptr<Material> redMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), 0.0f, defaultScale, defaultOffset);
+	std::shared_ptr<Material> BronzeNormal = std::make_shared<Material>(basicPixelShader, basicVertexShader, XMFLOAT4(1, 1, 1, 1), 0.0, defaultScale, defaultOffset);
 
-	redMat->AddSampler(0, sampler);
-	redMat->AddTexture(0, brickSRV);
-	redMat->AddTexture(1, brickNormalSRV);
+	BronzeNormal->AddSampler(0, sampler);
+	BronzeNormal->AddTexture(0, bronzeSRV);
+	BronzeNormal->AddTexture(1, bronzeNormalsSRV);
 
-	std::shared_ptr<Material> blueMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
+	//add samplers to materials
+	matBronzePBR->AddSampler(0, sampler);
+	matBronzePBR->AddTexture(0, bronzeSRV);
+	matBronzePBR->AddTexture(1, bronzeNormalsSRV);
+	matBronzePBR->AddTexture(2, bronzeRoughnessSRV);
+	matBronzePBR->AddTexture(3, bronzeMetalSRV);
 
-	blueMat->AddSampler(0, sampler);
-	blueMat->AddTexture(0, rockSRV);
-	blueMat->AddTexture(1, rockNormalSRV);
+	//do it again for scratched metal
+	matScratchedPBR->AddSampler(0, sampler);
+	matScratchedPBR->AddTexture(0, scratchedSRV);
+	matScratchedPBR->AddTexture(1, scratchedNormalsSRV);
+	matScratchedPBR->AddTexture(2, scratchedRoughnessSRV);
+	matScratchedPBR->AddTexture(3, scratchedMetalSRV);
 
-	std::shared_ptr<Material> cushionMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
-	std::shared_ptr<Material> cobbleMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
-	std::shared_ptr<Material> rockMat = std::make_shared<Material>(basicPixelShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, defaultScale, defaultOffset);
-
-	std::shared_ptr<Material> fancyMat = std::make_shared<Material>(fancyShader, basicVertexShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), 0.0f, uvScaleRepeat, defaultOffset);
-
-
-	cobbleMat->AddSampler(0, sampler);
-	cobbleMat->AddTexture(0, cobblestoneSRV);
-	cobbleMat->AddTexture(1, cobblestoneNormalSRV);
-
-
-	cushionMat->AddSampler(0, sampler);
-	cushionMat->AddTexture(0, cushionSRV);
-	cushionMat->AddTexture(1, cushionNormalSRV);
-
-
-	fancyMat->AddSampler(0, sampler);
-	fancyMat->AddTexture(0, woodSRV);
-	fancyMat->AddTexture(1, brickSRV);
-
-	rockMat->AddSampler(0, sampler);
-	rockMat->AddTexture(0, rockSRV);
-	rockMat->AddTexture(1, rockNormalSRV);
-
-
-	materials.push_back(redMat);
-	materials.push_back(greenMat);
-	materials.push_back(blueMat);
-	materials.push_back(cobbleMat);
-	materials.push_back(cushionMat);
-	materials.push_back(fancyMat);
-
-
-
-	// Create Entities
-
-	entities.push_back(Entity(meshes[0], blueMat));        // 0: cube
-	entities.push_back(Entity(meshes[1], greenMat));      // 1: cylinder
-	
-	entities.push_back(Entity(meshes[2], redMat));         // 2: helix
-	entities.push_back(Entity(meshes[5], cobbleMat));         // 3: sphere
-
-	entities.push_back(Entity(meshes[5], cushionMat));     // 4: cylinder
-	entities.push_back(Entity(meshes[5], cushionMat));     // 5: cube
-
-	entities.push_back(Entity(meshes[0], rockMat));      // 6: quad_double
-	entities.push_back(Entity(meshes[6], rockMat));      // 7: torus
+	matPaintPBR->AddSampler(0, sampler);
+	matPaintPBR->AddTexture(0, paintSRV);
+	matPaintPBR->AddTexture(1, paintNormalsSRV);
+	matPaintPBR->AddTexture(2, paintRoughnessSRV);
+	matPaintPBR->AddTexture(3, paintMetalSRV);
 
 	// Create the Sky
 	sky = std::make_shared<Sky>(cubeMesh, sampler, skyVS, skyPS);
 	
-	
+	//create initial entities
+	entities.push_back(Entity(meshes[0], matScratchedPBR));
+	entities.push_back(Entity(meshes[2], matScratchedPBR));
+	entities.push_back(Entity(meshes[5], matPaintPBR));
+	entities.push_back(Entity(meshes[0], BronzeNormal));
+
+
 	float spacing = 3.0f;
 	float startX = -((static_cast<float>(entities.size()) - 1.0f) * spacing) * 0.5f;
 	for (size_t i = 0; i < entities.size(); i++)

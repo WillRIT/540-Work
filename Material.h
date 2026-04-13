@@ -19,7 +19,7 @@ public:
 		float roughness,
 		DirectX::XMFLOAT2 uvScale = DirectX::XMFLOAT2(1, 1),
 		DirectX::XMFLOAT2 uvOffset = DirectX::XMFLOAT2(0, 0));
-
+	
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> GetPixelShader();
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> GetVertexShader();
 
