@@ -4,19 +4,20 @@
 //data to manipulate pixels
 cbuffer ShaderData : register(b0)
 {
+	//material data
+    //float3 colorTint;
+    //float roughness;
+    float2 uvScale; //changes how many times texture is on object
+    float2 uvOffset; //changes start position of texture
+
+	//entity data
+    float3 cameraPos; //helps with specular + diffuse lighting
+
+	//light data
     int numLights;
-    float3 ambientColor;
 
+	//light objects
     Lights lights[MAX_LIGHTS];
-
-    float3 cameraPos;
-    float pad;
-
-    float4 colorTint;
-    float roughness;
-    float3 padding;
-    float2 uvScale;
-    float2 uvOffset;
 };
 
 Texture2D Albedo : register(t0); //whiteness map (surface texture)

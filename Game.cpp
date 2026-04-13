@@ -229,6 +229,9 @@ void Game::CreateGeometry()
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> fancyShader = LoadPixelShader(FixPath(L"CustomPS.cso").c_str());
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> PBRPixelShader = LoadPixelShader(FixPath(L"PBRPixelShader.cso").c_str());
 
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> test = LoadPixelShader(FixPath(L"PixelShader1.cso").c_str());
+
+
     // Sky Stuff
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> skyVS = LoadVertexShader(FixPath(L"SkyVertexShader.cso").c_str());
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> skyPS = LoadPixelShader(FixPath(L"SkyPixelShader.cso").c_str());
