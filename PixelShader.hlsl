@@ -48,6 +48,8 @@ float4 main(VertexToPixel input) : SV_TARGET
     input.normal = NormalMapping(NormalMap, BasicSampler, input.uv, input.normal, input.tangent);
     
     float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
+    // also gamma correct this
+    surfaceColor = pow(surfaceColor, 2.2);
     surfaceColor *= colorTint.rgb;
     
     float3 totalLight = (surfaceColor * ambientColor);
@@ -76,6 +78,8 @@ float4 main(VertexToPixel input) : SV_TARGET
         }
     }
     
+    // Gamma Correction
+    totalLight = pow(totalLight, 1.0 / 2.2);
     
     return float4(totalLight, 1);
 }
