@@ -11,6 +11,7 @@ Texture2D Albedo : register(t0);
 Texture2D NormalMap : register(t1);
 SamplerState BasicSampler : register(s0);
 
+
 cbuffer PixelShaderConstants : register(b0)
 {
     // lighting - MUST match C++ struct order exactly!
@@ -40,6 +41,9 @@ cbuffer PixelShaderConstants : register(b0)
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+
+    
+    
     input.normal = normalize(input.normal);
     input.tangent = normalize(input.tangent);
     input.uv = input.uv * uvScale + uvOffset;

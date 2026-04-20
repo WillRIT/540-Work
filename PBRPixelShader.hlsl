@@ -23,6 +23,7 @@ Texture2D Albedo : register(t0); //whiteness map (surface texture)
 Texture2D NormalMap : register(t1); //normal map
 Texture2D RoughnessMap : register(t2); //roughness map (similar to specular maps)
 Texture2D MetalnessMap : register(t3); //metalness map (0 or 1)
+Texture2D ShadowMap : register(t4);
 SamplerState BasicSampler : register(s0); //"s" registers for samplers
 
 // --------------------------------------------------------
@@ -36,6 +37,19 @@ SamplerState BasicSampler : register(s0); //"s" registers for samplers
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+	//check shadow map before lighting
+    input.shadowMapPos /= input.shadowMapPos.w;
+	//convert the normalized device coordinates to UVs for sampling
+    float2 shadowUV = input.shadowMapPos.xy * 0.5f + 0.5f;
+    shadowUV.y = 1 - shadowUV.y; // Flip the Y
+	//grab the distances we need: light-to-pixel and closest-surface
+    float distToLight = input.shadowMapPos.z;
+    float distShadowMap = ShadowMap.Sample(BasicSampler, shadowUV).r;
+	//for testing, just return black where there are shadows.
+    if (distShadowMap < distToLight)
+        return float4(0, 0, 0, 1);
+	
+	
 	//alter uv coords using offset
     input.uv = input.uv * uvScale + uvOffset;
 

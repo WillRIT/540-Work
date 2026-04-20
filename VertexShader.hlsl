@@ -11,6 +11,10 @@ cbuffer VertexShaderConstants : register(b0)
     matrix worldInvTranspose;
     matrix view;
     matrix projection;
+	
+		//shadow map
+    matrix lightView;
+    matrix lightProj;
 };
 
 // --------------------------------------------------------
@@ -41,6 +45,11 @@ VertexToPixel main( VertexShaderInput input )
 	// Tangent Space into the Pipeline
 	
     output.tangent = mul((float3x3) world, input.tangent);
+	
+	//get where the vertex is from the shadow's pov
+    matrix shadowWVP = mul(lightProj, mul(lightView, world));
+	//requires some repeat work
+    output.shadowMapPos = mul(shadowWVP, float4(input.localPosition, 1.0f));
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

@@ -9,6 +9,10 @@ struct VertexShaderConstants
 	DirectX::XMFLOAT4X4 worldInverseTranspose;
 	DirectX::XMFLOAT4X4 view;
 	DirectX::XMFLOAT4X4 projection;
+
+
+	DirectX::XMFLOAT4X4 lightViewMatrix;
+	DirectX::XMFLOAT4X4 lightProjMatrix;
 };
 
 // FOR THE LOVE OF GOD MAKE SURE THIS MATCHES WITH THE HLSL VERSION OF THE BUFFERS CRYING EMOJI CHINESE BRUH

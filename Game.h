@@ -27,6 +27,9 @@ public:
 	void Update(float deltaTime, float totalTime);
 	void Draw(float deltaTime, float totalTime);
 	void OnResize();
+	void CreateShadowMap();
+	void RenderShadowMap();
+
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> LoadPixelShader(const wchar_t* compiledShaderPath);
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> LoadVertexShader(const wchar_t* compiledShaderPath);
 
@@ -47,8 +50,7 @@ public:
 	// Light management
 	std::vector<Light> lights;
 	// Directional Lights
-	Light directionalLight1 = {};
-	Light directionalLight2 = {};
+	Light directionalLight = {};
 
 	// Spot Lights
 	Light spotlight1 = {};
@@ -57,6 +59,16 @@ public:
 	// Point Lights
 	Light pointLight1 = {};
 	Light pointLight2 = {};
+
+	// Shadow Stuff
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> shadowDSV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadowSRV;
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState> shadowRasterizer;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSampler;
+	DirectX::XMFLOAT4X4 lightViewMatrix;
+	DirectX::XMFLOAT4X4 lightProjectionMatrix;
+	int shadowMapResolution = 1024; //set shadow map resolution
+	float lightProjectionSize;
 
 	// Ambient Light
 	DirectX::XMFLOAT3 ambientLightColor = { 0.2f, 0.2f, 0.2f }; // Grey Sky

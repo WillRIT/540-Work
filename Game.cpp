@@ -86,11 +86,11 @@ Game::Game()
 	cameras.push_back(*camera2);
 
 	// Light Stuff
-	Light directionalLight = {};
+	directionalLight = {};
 
 	directionalLight.Type = LIGHT_TYPE_DIRECTIONAL;
 	directionalLight.Direction = { 0.0f, -1.0f, 0.0f };
-	directionalLight.Color = { 0.2, 0.2, 1.0 };
+	directionalLight.Color = { 0.2f, 0.2f, 1.0f };
 	directionalLight.Intensity = 1.0f;
 
 	lights.push_back(directionalLight);
@@ -145,8 +145,63 @@ Game::Game()
 		// Set the input layout now that it exists
 		Graphics::Context->IASetInputLayout(inputLayout.Get());
 	}
+	CreateShadowMap();
 }
 
+void Game::CreateShadowMap()
+{
+	//Create a description for the Shadow Map
+	D3D11_TEXTURE2D_DESC shadowDesc = {};
+	shadowDesc.Width = shadowMapResolution; 
+	shadowDesc.Height = shadowMapResolution; 
+	shadowDesc.ArraySize = 1;
+	shadowDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	shadowDesc.CPUAccessFlags = 0;
+	shadowDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	shadowDesc.MipLevels = 1;
+	shadowDesc.MiscFlags = 0;
+	shadowDesc.SampleDesc.Count = 1;
+	shadowDesc.SampleDesc.Quality = 0;
+	shadowDesc.Usage = D3D11_USAGE_DEFAULT;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> shadowTexture;
+	Graphics::Device->CreateTexture2D(&shadowDesc, 0, shadowTexture.GetAddressOf());
+
+	//Create the depth/stencil view
+	D3D11_DEPTH_STENCIL_VIEW_DESC shadowDSDesc = {};
+	shadowDSDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	shadowDSDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D; //2d in our case
+	shadowDSDesc.Texture2D.MipSlice = 0; //depth to mip map (none for this)
+	Graphics::Device->CreateDepthStencilView(
+		shadowTexture.Get(),
+		&shadowDSDesc,
+		shadowDSV.GetAddressOf());
+	
+	
+	//Create the SRV for the shadow map
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = DXGI_FORMAT_R32_FLOAT; //format specific for depth
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	Graphics::Device->CreateShaderResourceView(
+		shadowTexture.Get(),
+		&srvDesc,
+		shadowSRV.GetAddressOf());
+
+	//Create the matrices for shadow
+	XMVECTOR lightDirection = XMLoadFloat3(&directionalLight.Direction);
+	XMMATRIX lightView = XMMatrixLookToLH(
+		lightDirection * -20, // Position: "Backing up" 20 units from origin
+		lightDirection, // Direction: light's direction
+		XMVectorSet(0, 1, 0, 0)); // Up: World up vector (Y axis)
+
+	lightProjectionSize = 15.0f; // Tweak for your scene!
+	XMMATRIX lightProjection = XMMatrixOrthographicLH(
+		lightProjectionSize,
+		lightProjectionSize,
+		1.0f,
+		100.0f);
+}
 
 // --------------------------------------------------------
 // Clean up memory or objects created by this class
@@ -235,13 +290,18 @@ void Game::CreateGeometry()
     // Sky Stuff
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> skyVS = LoadVertexShader(FixPath(L"SkyVertexShader.cso").c_str());
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> skyPS = LoadPixelShader(FixPath(L"SkyPixelShader.cso").c_str());
+
+	// Shadow Stuff
+	//shadows
+	Microsoft::WRL::ComPtr<ID3D11VertexShader> shadowMapVS = LoadVertexShader(FixPath(L"ShadowVS.cso").c_str());
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> shadowMapPS = LoadPixelShader(FixPath(L"ShadowPS.cso").c_str());
 	
 
 	//Direction
-	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
-	directionalLight1.Direction = XMFLOAT3(1.0f, 0.1f, 0.0f);
-	directionalLight1.Color = XMFLOAT3(1.0f, 0.3f, 0.4f); //maroon
-	directionalLight1.Intensity = 1.0f;
+	directionalLight.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight.Direction = XMFLOAT3(1.0f, 0.1f, 0.0f);
+	directionalLight.Color = XMFLOAT3(1.0f, 0.3f, 0.4f); //maroon
+	directionalLight.Intensity = 1.0f;
 
 	
 /*
@@ -283,7 +343,7 @@ void Game::CreateGeometry()
 	spotlight2.SpotOuterAngle = XMConvertToRadians(40);
 
 	//Add lights to vector
-	lights.insert(lights.end(), { directionalLight1, spotlight1, spotlight2 });
+	lights.insert(lights.end(), { directionalLight, spotlight1, spotlight2 });
 	
 	
 	// Load Models - Convert wide strings to narrow strings using WideToNarrow helper
@@ -294,6 +354,8 @@ void Game::CreateGeometry()
 	std::shared_ptr<Mesh> quadDoubleMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/quad_double_sided.obj")).c_str());
 	std::shared_ptr<Mesh> sphereMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/sphere.obj")).c_str());
 	std::shared_ptr<Mesh> torusMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/torus.obj")).c_str());
+	std::shared_ptr<Mesh> burgerMesh = std::make_shared<Mesh>(WideToNarrow(FixPath(L"../../Assets/Meshes/junk_food.obj")).c_str());
+
 
 	//Load textures
 	//create SRVs for textures
@@ -339,6 +401,7 @@ void Game::CreateGeometry()
 	meshes.push_back(quadDoubleMesh);
 	meshes.push_back(sphereMesh);
 	meshes.push_back(torusMesh);
+	meshes.push_back(burgerMesh);
 
 	// Create Materials
 	DirectX::XMFLOAT2 defaultScale(1.0f, 1.0f);
@@ -386,7 +449,7 @@ void Game::CreateGeometry()
 	entities.push_back(Entity(meshes[0], matScratchedPBR));
 	entities.push_back(Entity(meshes[2], matScratchedPBR));
 	entities.push_back(Entity(meshes[5], matPaintPBR));
-	entities.push_back(Entity(meshes[0], BronzeNormal));
+	entities.push_back(Entity(meshes[3], BronzeNormal));
 
 
 	float spacing = 3.0f;
@@ -411,7 +474,39 @@ void Game::CreateGeometry()
 	}
 }
 
+void Game::RenderShadowMap()
+{
+	// Initial pipeline setup - No RTV necessary - Clear shadow map
+	Graphics::Context->OMSetRenderTargets(0, 0, shadowOptions.ShadowDSV.Get());
+	Graphics::Context->ClearDepthStencilView(shadowOptions.ShadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	Graphics::Context->RSSetState(shadowOptions.ShadowRasterizerState.Get());
 
+	// Need to create a viewport that matches the shadow map resolution
+	D3D11_VIEWPORT viewport = {};
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.Width = (float)shadowOptions.ShadowMapResolution;
+	viewport.Height = (float)shadowOptions.ShadowMapResolution;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	Graphics::Context->RSSetViewports(1, &viewport);
+
+	// Turn on our shadow map Vertex Shader
+	// and turn OFF the pixel shader entirely
+	Graphics::Context->VSSetShader(shadowMapVS.Get(), 0, 0);
+	Graphics::Context->PSSetShader(0, 0, 0); // No PS
+
+	struct ShadowVSData
+	{
+		XMFLOAT4X4 world;
+		XMFLOAT4X4 view;
+		XMFLOAT4X4 proj;
+	};
+
+	ShadowVSData vsData = {};
+	vsData.view = shadowOptions.LightViewMatrix;
+	vsData.proj = shadowOptions.LightProjectionMatrix;
+}
 
 // --------------------------------------------------------
 // Handle resizing to match the new window size
@@ -617,6 +712,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		// Clear the back buffer (erase what's on screen) and depth buffer
 		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	colors);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+		Graphics::Context->ClearDepthStencilView(shadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+		ID3D11RenderTargetView* nullRTV{};
+		Graphics::Context->OMSetRenderTargets(1, &nullRTV, shadowDSV.Get());
 	}
 
 	// DRAW geometry
