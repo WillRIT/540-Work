@@ -6,6 +6,7 @@
 #include "Mesh.h"
 #include "BufferStructs.h"
 #include <vector>
+
 #include "Entity.h"
 #include "Camera.h"
 #include <DirectXMath.h>
@@ -61,14 +62,14 @@ public:
 	Light pointLight2 = {};
 
 	// Shadow Stuff
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> shadowDSV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadowSRV;
-	Microsoft::WRL::ComPtr<ID3D11RasterizerState> shadowRasterizer;
+	DemoShadowOptions shadowOptions;
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSampler;
 	DirectX::XMFLOAT4X4 lightViewMatrix;
 	DirectX::XMFLOAT4X4 lightProjectionMatrix;
 	int shadowMapResolution = 1024; //set shadow map resolution
 	float lightProjectionSize;
+	Microsoft::WRL::ComPtr<ID3D11VertexShader> shadowMapVS;
+
 
 	// Ambient Light
 	DirectX::XMFLOAT3 ambientLightColor = { 0.2f, 0.2f, 0.2f }; // Grey Sky
