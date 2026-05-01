@@ -17,6 +17,7 @@
 #include <cstring>
 #include <cmath>
 #include <string>
+#include <algorithm>
 
 
 // Needed for a helper function to load pre-compiled shader files
@@ -146,6 +147,47 @@ Game::Game()
 		Graphics::Context->IASetInputLayout(inputLayout.Get());
 	}
 	CreateShadowMap();
+   CreatePostProcessResources();
+}
+
+void Game::CreatePostProcessResources()
+{
+	ppRTV.Reset();
+	ppSRV.Reset();
+
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = Window::Width();
+	textureDesc.Height = Window::Height();
+	textureDesc.ArraySize = 1;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.MipLevels = 1;
+	textureDesc.MiscFlags = 0;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> ppTexture;
+	Graphics::Device->CreateTexture2D(&textureDesc, 0, ppTexture.GetAddressOf());
+
+	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+	rtvDesc.Format = textureDesc.Format;
+	rtvDesc.Texture2D.MipSlice = 0;
+	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	Graphics::Device->CreateRenderTargetView(ppTexture.Get(), &rtvDesc, ppRTV.ReleaseAndGetAddressOf());
+	Graphics::Device->CreateShaderResourceView(ppTexture.Get(), 0, ppSRV.ReleaseAndGetAddressOf());
+
+	if (!ppSampler)
+	{
+		D3D11_SAMPLER_DESC ppSampDesc = {};
+		ppSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		ppSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		ppSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		ppSampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		ppSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+		Graphics::Device->CreateSamplerState(&ppSampDesc, ppSampler.GetAddressOf());
+	}
 }
 
 void Game::CreateShadowMap()
@@ -317,7 +359,6 @@ void Game::CreateGeometry()
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> fancyShader = LoadPixelShader(FixPath(L"CustomPS.cso").c_str());
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> PBRPixelShader = LoadPixelShader(FixPath(L"PBRPixelShader.cso").c_str());
 
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> test = LoadPixelShader(FixPath(L"PixelShader1.cso").c_str());
 
 
     // Sky Stuff
@@ -326,6 +367,10 @@ void Game::CreateGeometry()
 
  // Shadow Stuff
 	shadowMapVS = LoadVertexShader(FixPath(L"ShadowVS.cso").c_str());
+
+	// Post process shaders
+	ppVS = LoadVertexShader(FixPath(L"FullscreenVS.cso").c_str());
+	ppPS = LoadPixelShader(FixPath(L"BoxBlurPS.cso").c_str());
 	
 
 	//Direction
@@ -575,6 +620,7 @@ void Game::OnResize()
 		cameras[i].UpdateProjectionMatrix(Window::AspectRatio());
 
 	}
+   CreatePostProcessResources();
 }
 
 // --------------------------------------------------------
@@ -711,6 +757,10 @@ void Game::Update(float deltaTime, float totalTime)
 				ambientLightColor = DirectX::XMFLOAT3(ambientValues[0], ambientValues[1], ambientValues[2]);
 			}
 
+			ImGui::Separator();
+            ImGui::Text("Post Process");
+			ImGui::SliderInt("Blur Radius", &ppBlurRadius, 0, MaxBlurRadius);
+
 			for (size_t i = 0; i < lights.size(); i++)
 			{
 				std::string label = "Light " + std::to_string(i);
@@ -769,8 +819,11 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - At the beginning of Game::Draw() before drawing *anything*
 	{
 		// Clear the back buffer (erase what's on screen) and depth buffer
-		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	colors);
+      ID3D11ShaderResourceView* nullSRV = nullptr;
+		Graphics::Context->PSSetShaderResources(0, 1, &nullSRV);
+		Graphics::Context->ClearRenderTargetView(ppRTV.Get(), colors);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+       Graphics::Context->OMSetRenderTargets(1, ppRTV.GetAddressOf(), Graphics::DepthBufferDSV.Get());
 	}
 
 	// DRAW geometry
@@ -825,13 +878,37 @@ void Game::Draw(float deltaTime, float totalTime)
 			// Draw one entity
 			e.Draw();
 		}
-		sky->Draw(camera);
+      sky->Draw(camera);
 	}
 
 	// Frame END
 	// - These should happen exactly ONCE PER FRAME
 	// - At the very end of the frame (after drawing *everything*)
 	{
+     Graphics::Context->OMSetRenderTargets(1, Graphics::BackBufferRTV.GetAddressOf(), nullptr);
+		Graphics::Context->IASetInputLayout(nullptr);
+       Graphics::Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Graphics::Context->VSSetShader(ppVS.Get(), 0, 0);
+		Graphics::Context->PSSetShader(ppPS.Get(), 0, 0);
+		Graphics::Context->PSSetShaderResources(0, 1, ppSRV.GetAddressOf());
+		Graphics::Context->PSSetSamplers(0, 1, ppSampler.GetAddressOf());
+
+		struct PostProcessData
+		{
+			int blurRadius;
+			float pixelWidth;
+			float pixelHeight;
+			float padding;
+		};
+
+		PostProcessData ppData = {};
+       ppData.blurRadius = (std::min)(ppBlurRadius, MaxBlurRadius);
+		ppData.pixelWidth = 1.0f / static_cast<float>(Window::Width());
+		ppData.pixelHeight = 1.0f / static_cast<float>(Window::Height());
+		Graphics::FillAndBindNextConstantBuffer(&ppData, sizeof(PostProcessData), D3D11_PIXEL_SHADER, 0);
+
+		Graphics::Context->Draw(3, 0);
+
 		ImGui::Render(); // Turns this frame’s UI into renderable triangles
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // Draws it to the screen
 

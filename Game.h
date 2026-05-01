@@ -29,6 +29,7 @@ public:
 	void OnResize();
 	void CreateShadowMap();
 	void RenderShadowMap();
+	void CreatePostProcessResources();
 
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> LoadPixelShader(const wchar_t* compiledShaderPath);
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> LoadVertexShader(const wchar_t* compiledShaderPath);
@@ -73,6 +74,15 @@ public:
 
 	// Ambient Light
 	DirectX::XMFLOAT3 ambientLightColor = { 0.2f, 0.2f, 0.2f }; // Grey Sky
+
+	// Post processing resources
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> ppSampler;
+	Microsoft::WRL::ComPtr<ID3D11VertexShader> ppVS;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> ppPS;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> ppRTV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ppSRV;
+   int ppBlurRadius = 2;
+	static constexpr int MaxBlurRadius = 4;
 
 private:
 	bool animateEntities = true;
