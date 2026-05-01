@@ -25,6 +25,7 @@ Texture2D RoughnessMap : register(t2); //roughness map (similar to specular maps
 Texture2D MetalnessMap : register(t3); //metalness map (0 or 1)
 Texture2D ShadowMap : register(t4);
 SamplerState BasicSampler : register(s0); //"s" registers for samplers
+SamplerComparisonState ShadowSampler : register(s1);
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -37,17 +38,14 @@ SamplerState BasicSampler : register(s0); //"s" registers for samplers
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	//check shadow map before lighting
-    input.shadowMapPos /= input.shadowMapPos.w;
+  //check shadow map before lighting
+	input.shadowMapPos /= input.shadowMapPos.w;
 	//convert the normalized device coordinates to UVs for sampling
-    float2 shadowUV = input.shadowMapPos.xy * 0.5f + 0.5f;
-    shadowUV.y = 1 - shadowUV.y; // Flip the Y
+	float2 shadowUV = input.shadowMapPos.xy * 0.5f + 0.5f;
+	shadowUV.y = 1 - shadowUV.y; // Flip the Y
 	//grab the distances we need: light-to-pixel and closest-surface
-    float distToLight = input.shadowMapPos.z;
-    float distShadowMap = ShadowMap.Sample(BasicSampler, shadowUV).r;
-	//for testing, just return black where there are shadows.
-    if (distShadowMap < distToLight)
-        return float4(0, 0, 0, 1);
+	float distToLight = input.shadowMapPos.z;
+	float shadowAmount = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, distToLight).r;
 	
 	
 	//alter uv coords using offset
@@ -79,15 +77,38 @@ float4 main(VertexToPixel input) : SV_TARGET
 	//linear texture sampling, lerp is used on the specular color to match this
     float3 specularColor = lerp(0.04f, color.rgb, metalness);
 	
-	//Begin lighting calculations
+   //Begin lighting calculations
 	//include ambient lighting ONCE
-    float3 totalLight = float3(0, 0, 0);
-	
+	float3 totalLight = float3(0, 0, 0);
+
 	//angle the surface is viewed from
-    float3 surfaceToCamera = normalize(cameraPos - input.worldPosition);
-	
-	//apply the total lighting
-    totalLight += CalculateTotalLightPBR(numLights, lights, input.normal, surfaceToCamera, input.worldPosition, roughnessFromMap, metalness, color, specularColor);
+	float3 surfaceToCamera = normalize(cameraPos - input.worldPosition);
+
+	for (int i = 0; i < numLights; i++)
+	{
+		Lights currentLight = lights[i];
+		currentLight.direction = normalize(currentLight.direction);
+
+		float3 lightResult = float3(0, 0, 0);
+		switch (currentLight.type)
+		{
+			case LIGHT_TYPE_DIRECTIONAL:
+				lightResult = DirectionLightPBR(currentLight, input.normal, surfaceToCamera, roughnessFromMap, metalness, color, specularColor);
+				if (i == 0)
+				{
+					lightResult *= shadowAmount;
+				}
+				break;
+			case LIGHT_TYPE_POINT:
+				lightResult = PointLightPBR(currentLight, input.normal, surfaceToCamera, input.worldPosition, roughnessFromMap, metalness, color, specularColor);
+				break;
+			case LIGHT_TYPE_SPOT:
+				lightResult = SpotLightPBR(currentLight, input.normal, surfaceToCamera, input.worldPosition, roughnessFromMap, metalness, color, specularColor);
+				break;
+		}
+
+		totalLight += lightResult;
+	}
 	
 	
 	 // Gamma Correction

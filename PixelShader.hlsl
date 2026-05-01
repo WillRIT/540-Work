@@ -9,7 +9,9 @@
 // PBR Texture Slots
 Texture2D Albedo : register(t0);
 Texture2D NormalMap : register(t1);
+Texture2D ShadowMap : register(t4);
 SamplerState BasicSampler : register(s0);
+SamplerComparisonState ShadowSampler : register(s1);
 
 
 cbuffer PixelShaderConstants : register(b0)
@@ -41,6 +43,12 @@ cbuffer PixelShaderConstants : register(b0)
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+ input.shadowMapPos /= input.shadowMapPos.w;
+    float2 shadowUV = input.shadowMapPos.xy * 0.5f + 0.5f;
+    shadowUV.y = 1 - shadowUV.y;
+
+    float distToLight = input.shadowMapPos.z;
+    float shadowAmount = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, distToLight).r;
 
     
     
@@ -58,7 +66,7 @@ float4 main(VertexToPixel input) : SV_TARGET
     surfaceColor *= colorTint.rgb;
     
     float3 totalLight = (surfaceColor * ambientColor);
-        
+
     float3 surfaceToCamera = normalize(cameraPosition - input.worldPosition);
 
      //loop through lights
@@ -68,19 +76,26 @@ float4 main(VertexToPixel input) : SV_TARGET
         Lights currentLight = lights[i];
         //normalize the direction to ensure consistent results
         currentLight.direction = normalize(currentLight.direction);
-        
+
+        float3 lightResult = float3(0, 0, 0);
         switch (currentLight.type)
         {
             case LIGHT_TYPE_DIRECTIONAL:
-                totalLight += DirectionLight(currentLight, input.normal, surfaceToCamera, roughness, surfaceColor);
+                lightResult = DirectionLight(currentLight, input.normal, surfaceToCamera, roughness, surfaceColor);
+                if (i == 0)
+                {
+                    lightResult *= shadowAmount;
+                }
                 break;
             case LIGHT_TYPE_POINT:
-                totalLight += PointLight(currentLight, input.normal, surfaceToCamera, input.worldPosition, roughness, surfaceColor);
+                lightResult = PointLight(currentLight, input.normal, surfaceToCamera, input.worldPosition, roughness, surfaceColor);
                 break;
             case LIGHT_TYPE_SPOT:
-                totalLight += SpotLight(currentLight, input.normal, surfaceToCamera, input.worldPosition, roughness, surfaceColor);
+                lightResult = SpotLight(currentLight, input.normal, surfaceToCamera, input.worldPosition, roughness, surfaceColor);
                 break;
         }
+
+        totalLight += lightResult;
     }
     
     // Gamma Correction

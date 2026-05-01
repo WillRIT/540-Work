@@ -65,6 +65,7 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadowSRV;
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> shadowRasterizer;
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSampler;
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> shadowMapVS;
 	DirectX::XMFLOAT4X4 lightViewMatrix;
 	DirectX::XMFLOAT4X4 lightProjectionMatrix;
 	int shadowMapResolution = 1024; //set shadow map resolution
@@ -75,6 +76,7 @@ public:
 
 private:
 	bool animateEntities = true;
+ int floorEntityIndex = -1;
 	std::vector<DirectX::XMFLOAT3> entityPositions;
 	std::vector<DirectX::XMFLOAT3> entityRotations;
 	std::vector<DirectX::XMFLOAT3> entityScales;
