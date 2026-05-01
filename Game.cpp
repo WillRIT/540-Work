@@ -371,6 +371,15 @@ void Game::CreateGeometry()
 	// Post process shaders
 	ppVS = LoadVertexShader(FixPath(L"FullscreenVS.cso").c_str());
 	ppPS = LoadPixelShader(FixPath(L"BoxBlurPS.cso").c_str());
+
+	outlineVS = LoadVertexShader(FixPath(L"OutlineVS.cso").c_str());
+	outlinePS = LoadPixelShader(FixPath(L"OutlinePS.cso").c_str());
+
+	D3D11_RASTERIZER_DESC outlineRasterDesc = {};
+	outlineRasterDesc.FillMode = D3D11_FILL_SOLID;
+	outlineRasterDesc.CullMode = D3D11_CULL_FRONT;
+	outlineRasterDesc.DepthClipEnable = true;
+	Graphics::Device->CreateRasterizerState(&outlineRasterDesc, outlineRasterizer.GetAddressOf());
 	
 
 	//Direction
@@ -833,6 +842,43 @@ void Game::Draw(float deltaTime, float totalTime)
 		 // Re-bind input layout and topology (ImGui may have changed these)
 		Graphics::Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		Graphics::Context->IASetInputLayout(inputLayout.Get());
+
+		struct OutlineVSData
+		{
+			XMFLOAT4X4 world;
+			XMFLOAT4X4 worldInverseTranspose;
+			XMFLOAT4X4 view;
+			XMFLOAT4X4 projection;
+			float outlineThickness;
+			XMFLOAT3 padding;
+		};
+
+		struct OutlinePSData
+		{
+			XMFLOAT4 outlineColor;
+		};
+
+		Graphics::Context->RSSetState(outlineRasterizer.Get());
+		Graphics::Context->VSSetShader(outlineVS.Get(), 0, 0);
+		Graphics::Context->PSSetShader(outlinePS.Get(), 0, 0);
+
+		OutlinePSData outlinePsData = {};
+		outlinePsData.outlineColor = outlineColor;
+
+		for (auto& e : entities)
+		{
+			OutlineVSData outlineVsData = {};
+			outlineVsData.world = e.GetTransform()->GetWorldMatrix();
+			outlineVsData.worldInverseTranspose = e.GetTransform()->GetWorldInverseTransposeMatrix();
+			outlineVsData.view = camera->GetViewMatrix();
+			outlineVsData.projection = camera->GetProjectionMatrix();
+			outlineVsData.outlineThickness = outlineThickness;
+			Graphics::FillAndBindNextConstantBuffer(&outlineVsData, sizeof(OutlineVSData), D3D11_VERTEX_SHADER, 0);
+			Graphics::FillAndBindNextConstantBuffer(&outlinePsData, sizeof(OutlinePSData), D3D11_PIXEL_SHADER, 0);
+			e.Draw();
+		}
+
+		Graphics::Context->RSSetState(nullptr);
 
 		// Set buffers in the input assembler (IA) stage
 		//  - Do this ONCE PER OBJECT, since each object may have different geometry

@@ -84,6 +84,12 @@ public:
    int ppBlurRadius = 2;
 	static constexpr int MaxBlurRadius = 4;
 
+	Microsoft::WRL::ComPtr<ID3D11VertexShader> outlineVS;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> outlinePS;
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState> outlineRasterizer;
+	DirectX::XMFLOAT4 outlineColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float outlineThickness = 0.03f;
+
 private:
 	bool animateEntities = true;
  int floorEntityIndex = -1;
